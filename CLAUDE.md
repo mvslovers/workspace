@@ -1,7 +1,7 @@
 # mvslovers Project Ecosystem — Root Context
 
 This file provides shared context for all projects in the mvslovers ecosystem.
-It lives in the parent directory of all project repositories (`~/repos/CLAUDE.md`).
+It lives in the parent directory of all project repositories.
 Each project may have its own `CLAUDE.md` with project-specific details that
 extend (never contradict) this root context.
 
@@ -9,8 +9,8 @@ extend (never contradict) this root context.
 
 ## Project Ecosystem Overview
 
-All projects target **MVS 3.8j running on Hercules (TK4-)**.
-They are written in **C89** and/or **S/370 Assembler**, compiled and assembled
+All projects target **MVS 3.8j running on Hercules**.
+They are written in **C99** and/or **S/370 Assembler**, compiled and assembled
 cross-platform (macOS / Linux host → MVS target).
 
 ### Projects and Dependency Graph
@@ -18,15 +18,17 @@ cross-platform (macOS / Linux host → MVS target).
 ```
 c2asm370        — GCC 3.2.3 fork: C → S/370 assembler cross-compiler (standalone)
 crent370        — Standard C runtime + MVS extras (base dependency for ALL others)
-ufs370          — Unix-like virtual filesystem          needs: crent370
+ufsd            - Unix-like virtual filesystem server   needs: crent370
+ufs370          — Unix-like virtual filesystem (legacy) needs: crent370
 lua370          — Lua interpreter port                  needs: crent370
 ftp370          — MVS FTP client                        needs: crent370
 mqtt370         — MQTT utility + client library         needs: crent370
 mqtt370-broker  — MQTT broker application               needs: crent370, mqtt370, lua370
 mqtt370-cli     — MQTT command-line client              needs: crent370, mqtt370
-zlib370         — zlib compression library port          needs: crent370
-httpd           — HTTP server                           needs: crent370, ufs370, lua370, mqtt370
-mvsmf           — z/OSMF REST API clone                 needs: crent370, httpd
+zlib370         — zlib compression library port         needs: crent370
+httpd           — HTTP server                           needs: crent370, ufsd(libufs), lua370
+mvsmf           — z/OSMF REST API clone                 needs: crent370, ufsd(libufs), httpd
+brexx370        - MVS version of bRexx
 mbt             — MVS Build Tools (Python + Make)
 ```
 
@@ -77,22 +79,20 @@ MVS 3.8j runs in a severely constrained memory environment.
 ### C Language
 
 - **Strict C89 / ANSI C only** — compiled with GCC 3.2.3 (c2asm370)
-- No C99, no C11, no GCC extensions unless explicitly discussed and documented
-- No `//` comments — use `/* */` only
+- No C11, but gnu99 extensions
 - No VLAs (variable-length arrays)
-- All variable declarations at the top of the block (C89 rule)
-- **`-Werror` is enforced** — all warnings must be resolved, never suppressed
+- **`-Wall` & `-Werror` is enforced** — all warnings must be resolved, never suppressed
 
 ### Character Encoding
 
-- The MVS runtime operates in **EBCDIC** — never assume ASCII
+- The MVS runtime operates in **EBCDIC** (CP037) — never assume ASCII
 - No hardcoded ASCII character codes in logic (e.g. `c == 0x41` for `'A'`)
 - Use character literals (`'A'`, `'\n'`) and let the compiler handle encoding
 - String comparisons must be EBCDIC-aware; do not assume ASCII collating sequence
 
 ### Process Model
 
-- **No `fork()`**, no `exec()`, no `system()`
+- **No `fork()`**, no `exec()`
 - **No dynamic linking** — all code is linked statically via NCAL
 - **No POSIX APIs**: no `pthread`, no `mmap`, no `sigaction`, no `dlopen`, etc.
 - No standard Unix file paths (`/etc/`, `/tmp/`, `/usr/`, etc.)
@@ -206,7 +206,7 @@ Projects using mbt declare dependencies in `project.toml`:
 
 ```toml
 [dependencies]
-"mvslovers/crent370" = ">=1.0.4"
+"mvslovers/crent370" = ">=1.0.6"
 ```
 
 `make bootstrap` resolves versions from GitHub Releases, downloads headers
@@ -414,6 +414,7 @@ lua370: ~200). Runs parallel to `make build` which stays as-is (inline JCL, sing
 module at a time, `--member` support).
 
 **Problem:** `make build` inlines assembler source in JCL (`SYSIN DD *`). This causes:
+
 - S80A/S878 abends on large `.s` files (mvsMF/HTTPD memory exhaustion)
 - ~1400 JES jobs for crent370 (ASM + NCAL per module), ~45 min wall time
 
