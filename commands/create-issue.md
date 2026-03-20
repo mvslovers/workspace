@@ -1,54 +1,53 @@
-Create a new GitHub issue in the current repository. Usage: /create-issue <title>
+### /create-issue \<TASK-NN | description\>
 
-The argument is the issue title. You will interactively gather the remaining details.
+Create a GitHub issue, either from a Notion task or from a manual description.
 
-## Steps
+**Mode 1 — From Notion task (argument is TASK-NN or a number):**
 
-1. **Detect context:**
-   Run: `REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)`
-   Run: `PROJECT=$(basename $(pwd))`
-
-2. **Read project guidance:**
-   If a `CLAUDE.md` exists, read it to understand the project's conventions, labels, and milestones.
-
-3. **Gather details by asking the user:**
-   - What type of issue is this? (Bug, Feature, Enhancement, Chore, Research)
-   - Brief description of the problem or desired behavior
-   - Any specific files or components affected?
-   - Priority? (Critical, High, Medium, Low)
-   - Should this be assigned to a milestone?
-
-4. **Draft the issue body** with these sections:
+1. **Determine the repo** — `git remote get-url origin` → extract `owner/repo`
+2. **Find the Notion task** — Search the MVSLOVERS "Issues & Tasks" database
+   (data source `collection://c666f502-1973-4f96-bb83-3c743d1d2b30`) for the
+   task matching `Task ID` = NN.
+3. **Read the task** — Fetch the Notion page. Extract:
+   - `Title` → GitHub issue title
+   - `Description` → first line of the GitHub issue body (summary)
+   - Page content → remainder of the GitHub issue body (full details)
+   - `Priority` → GitHub label (if labels exist on the repo)
+   - `Type` → GitHub label (Bug, Feature, Enhancement, Chore)
+4. **Verify project match** — Resolve the task's `Project` relation.
+   Fetch the linked project page and check that its `Repo URL` matches
+   the current git remote. If not, warn and ask for confirmation.
+5. **Create the GitHub issue:**
+   ```bash
+   gh issue create --repo <owner/repo> --title "<title>" --body "<body>"
    ```
-   ## Summary
-   <concise description>
+6. **Write back to Notion** — Update the Notion task's `GitHub URL` property
+   with the URL returned by `gh issue create`.
+7. **Report** — Print the GitHub issue URL and the Notion task link.
 
-   ## Affected Files
-   <list of files/modules, if known>
+**Mode 2 — Manual (argument is free text):**
 
-   ## Implementation Notes
-   <technical approach, constraints, patterns to follow>
-
-   ## Testing
-   <how to verify the fix/feature>
-
-   ## Blocked by / Blocks
-   <dependencies on other issues, if any>
+1. **Determine the repo** — `git remote get-url origin` → extract `owner/repo`
+2. **Create the GitHub issue** using the argument as the title.
+   Ask for a body if the user hasn't provided enough context.
+   ```bash
+   gh issue create --repo <owner/repo> --title "<description>" --body "<body>"
    ```
+3. **Report** — Print the GitHub issue URL.
 
-5. **Show the draft** to the user for review before creating.
+**Argument detection:**
+- If the argument matches `TASK-\d+` or is a plain integer → Mode 1 (Notion)
+- Otherwise → Mode 2 (manual)
 
-6. **Create on GitHub:**
-   Run: `gh issue create --title "<title>" --body "<body>" --label "<labels>"`
+**Error handling:**
+- Task not found in Notion → stop, report "TASK-NN not found"
+- Project mismatch (Notion task belongs to a different repo) → warn, ask
+- `gh` not authenticated → stop, report "run gh auth login"
+- Notion task already has a `GitHub URL` → warn "issue already exists at <url>", ask before creating a duplicate
 
-7. **Create in Notion (optional):**
-   Search Notion Projects database for the current project name.
-   If found, create a matching entry in the Issues & Tasks database:
-   - Title: `#<number> — <title>`
-   - Project: link to the found project
-   - Type: matching the issue type
-   - Status: "To Do"
-   - Priority: as discussed
-   Report the Notion page URL.
-
-8. **Report:** Show the GitHub issue URL and Notion URL (if created).
+**Example usage:**
+```
+/create-issue TASK-15
+/create-issue 15
+/create-issue Fix the dataset list pagination bug
+```
