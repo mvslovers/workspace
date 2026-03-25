@@ -12,8 +12,9 @@ Show the current status of the project — open issues, PRs, and Notion tasks.
    Summarize: number of open issues, open PRs, any issues labeled as blocked.
 
 3. **Notion status:**
-   Search Notion Issues & Tasks database for items linked to this project.
-   Group by Status (To Do, In Progress, In Review, Blocked).
+   Search the Issues & Tasks data source (`data_source_url: "collection://c666f502-1973-4f96-bb83-3c743d1d2b30"`)
+   for the project name (e.g. `"mvsmf"`, `"crent370"`).
+   From the results, group by `Status` (To Do, In Progress, In Review, Blocked).
    Report counts per status.
 
 4. **Recent activity:**

@@ -52,11 +52,13 @@ This is the "Opus planning" workflow — analysis and spec first, implementation
    Create via: `gh issue create --title "..." --body "..." --label "..."`
 
 9. **Create Notion issue entries:**
-   For each GitHub issue, create a matching entry in Issues & Tasks:
-   - Title: `#<number> — <title>`
-   - Project: link to project
-   - Type, Priority, Effort as appropriate
-   - Status: "To Do"
+   For each GitHub issue, create a matching entry in the Issues & Tasks data source
+   (`data_source_id: "c666f502-1973-4f96-bb83-3c743d1d2b30"`):
+   - `Title`: `#<number> — <title>`
+   - `Project`: link to project (resolve via `collection://e0e18b50-53e1-404d-937b-9096ed63671e`)
+   - `GitHub URL`: the GitHub issue URL
+   - `Type`, `Priority`, `Effort` as appropriate
+   - `Status`: `"To Do"`
 
 10. **Report:**
     Summary of what was created:

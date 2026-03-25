@@ -5,9 +5,11 @@ Create a GitHub issue, either from a Notion task or from a manual description.
 **Mode 1 — From Notion task (argument is TASK-NN or a number):**
 
 1. **Determine the repo** — `git remote get-url origin` → extract `owner/repo`
-2. **Find the Notion task** — Search the MVSLOVERS "Issues & Tasks" database
-   (data source `collection://c666f502-1973-4f96-bb83-3c743d1d2b30`) for the
-   task matching `Task ID` = NN.
+2. **Find the Notion task** — Search the Issues & Tasks data source
+   (`data_source_url: "collection://c666f502-1973-4f96-bb83-3c743d1d2b30"`)
+   with query `"TASK-NN"` (e.g. `"TASK-15"`).
+   From the results, verify the match by checking that the `Task ID` property
+   equals NN. Do NOT rely on semantic title matching alone.
 3. **Read the task** — Fetch the Notion page. Extract:
    - `Title` → GitHub issue title
    - `Description` → first line of the GitHub issue body (summary)

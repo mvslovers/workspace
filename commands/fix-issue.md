@@ -20,9 +20,13 @@ Resolve GitHub issue #$ARGUMENTS end-to-end in the current repository.
 
 ## Notion Integration
 
-5. **Update Notion status to "In Progress":**
-   Search Notion Issues & Tasks for "#$ARGUMENTS —" with the current project name.
-   If found, update its Status property to "In Progress".
+5. **Find and update Notion task to "In Progress":**
+   Search the Issues & Tasks data source (`data_source_url: "collection://c666f502-1973-4f96-bb83-3c743d1d2b30"`)
+   with query `"https://github.com/$REPO/issues/$ARGUMENTS"` (the full GitHub issue URL).
+   This matches the `GitHub URL` property which is the most reliable identifier.
+   If no result, fall back to searching for `"#$ARGUMENTS $PROJECT"`.
+   Verify the match: the `GitHub URL` property must end with `/$REPO/issues/$ARGUMENTS`.
+   If a matching page is found, update its `Status` property to `"In Progress"`.
    If not found, that's fine — not all issues are tracked in Notion.
 
 ## Implementation
@@ -60,8 +64,8 @@ Resolve GitHub issue #$ARGUMENTS end-to-end in the current repository.
     Run: `gh pr create --title "<descriptive title>" --body "Fixes #$ARGUMENTS"`
 
 13. **Update Notion status to "In Review":**
-    Search Notion Issues & Tasks for "#$ARGUMENTS —" with the current project name.
-    If found, update its Status property to "In Review".
+    Use the same Notion page found in step 5 (no new search needed).
+    Update its `Status` property to `"In Review"`.
 
 14. **Report:**
     Summarize what was done, which files changed, and what needs manual verification.
