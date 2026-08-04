@@ -235,3 +235,30 @@ artifact.
 
 **Actively propose:** Issues/branches for non-trivial work; per-project
 `CLAUDE.md` files; anything that reduces memory use on MVS.
+
+## Agent Discipline
+
+**Verification before fix.** For any bug fix: write a test that reliably
+reproduces the failure first. Fix the code. Test must pass. "Feels fixed"
+is not fixed — MVS bugs (codepage, EBCDIC boundaries, alignment) are
+too subtle for that.
+
+**Debugging sequence.** Read the full ABEND dump or error output before
+proposing a fix. Reproduce the problem before attempting to correct it.
+Change one variable at a time.
+
+**Dependencies are permanent.** Every entry in `[dependencies]` is code
+you don't control, updated on someone else's schedule. Prefer libc370 or
+in-repo code before adding a dependency. If a new dep is added, document
+the reason in the PR.
+
+**Stop patterns.** Recognize and halt on:
+
+- **Kitchen Sink** — asked to fix a faucet, renovating the kitchen. If the
+  change touches code the user didn't mention, stop and ask.
+- **Runaway Refactor** — one file becomes ten. Scope creep in a fix PR is
+  a rollback risk on MVS.
+- **Optimistic Path** — writing only for the happy case. MVS RC checking
+  is mandatory; no silent error swallowing.
+- **Confident Guessing** — "I think this works" is not information.
+  "I'm not sure `__xmpost` handles key-0 client ECBs" is.
