@@ -208,6 +208,64 @@ project-root/
 
 ---
 
+## Live Debugging via HTTPD (httpd + module projects only)
+
+**Applies to:** `httpd`, and projects whose deliverable is a module running
+under it — `mvsmf`, `httprexx`, `httplua`. Not relevant to cc370, libc370,
+ufsd, ftpd or mbt.
+
+HTTPD ships display modules that read live MVS storage over HTTP. They are the
+fastest way to answer "what does the control block actually say" without a dump,
+and they are read-only. Use them **before** theorising about a control-block or
+timing problem — a measured field beats a guess, and `docs/` can be stale (the
+HTTPD block is 320 bytes today, not the 288 some docs still say).
+
+| Endpoint | Shows |
+|----------|-------|
+| `/.dsrv?target=…` | Server control blocks, hex + a named field table |
+| `/.dm?m=…` | Any storage address, hex + EBCDIC |
+| `/.dmtt` | Master Trace Table (console log, raw) |
+
+```
+/.dsrv?target=HTTPD|MGR|FS                 no address needed
+/.dsrv?target=CGI|TASK|FILE&m=<hex>        needs &m=
+/.dm?m=<hex>&l=<bytes>&c=<chunk>&t=<title> l/c/t optional (c<=64)
+/.dmtt
+```
+
+Chase a pointer by feeding it back into `/.dm`: `CVTPTR` lives at `0x10`, so
+`/.dm?m=10&l=16` gets the CVT address, and `/.dm?m=<cvt+130>&l=8&t=CVTTZ` reads
+the system timezone. That is how httpd#145 was pinned down instead of guessed.
+
+**They are not registered by default.** In 4.0.0 nothing is active unless
+`DD:HTTPDPRM` says so:
+
+```
+MOD=HTTPDSRV  /.dsrv
+MOD=HTTPDM    /.dm
+MOD=HTTPDMTT  /.dmtt
+```
+
+Also present, both superseded by mvsMF and only worth touching when working on
+them: `MOD=HTTPDSL /dsl/*` (dataset lister) and `MOD=HTTPJES2 /jes/*` (JES
+spool). `/jes/status` and `/jes/ddlist` return JSON and are handy as a quick
+JES2 cross-check.
+
+**Two cautions.**
+
+Trust the hex over the field table. `/.dsrv`'s HTTPCGI table is a version behind
+the struct (httpd#146): it reports `login` — a legacy field — and omits the
+`auth`/`res*` fields that actually decide the route's authorization, so it can
+state the opposite of the truth on an auth question.
+
+Write curl flags out inline, never via a shell variable. zsh does not
+word-split unquoted `$VAR`, so `A="-u u:p"; curl $A …` sends the userid with a
+leading space and every request 401s while looking like a server fault. When an
+authenticated request unexpectedly 401s, decode what was actually sent
+(`curl -v … | grep Authorization`) before suspecting the server or a deploy.
+
+---
+
 ## Git Workflow
 
 - Prefer a GitHub Issue + feature branch + PR for non-trivial changes; the
