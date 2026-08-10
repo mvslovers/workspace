@@ -24,19 +24,28 @@ ufsd-utils — ufsd tooling / utilities
 ftpd     — FTP server                                   needs: libc370, ufsd(libufs)
 httpd    — HTTP server                                  needs: libc370, ufsd(libufs)
 mvsmf    — z/OSMF REST API clone (httpd server module)  needs: libc370, ufsd(libufs), httpd(libhttpd)
+httplua  — Lua CGI handler (httpd server module)        needs: libc370, ufsd, httpd, lua370
+httprexx — REXX Server Pages (httpd server module)      needs: libc370, ufsd, httpd
+rexx370  — REXX interpreter, TSO/E V2 compatible        needs: lstring370
 lstring370 — Reentrant length-prefixed strings          needs: — (sysroot libc only)
 mbt      — MVS Build Tools (Python + Make)
 ```
 
-**lstring370** declares no dependency by design: consumers inject
+**httprexx does not build against rexx370.** It resolves the IRX services
+(`IRXINIT`/`IRXEXEC`/`IRXTERM`) at runtime against whatever is installed on the
+system, and vendors only the headers under `include/`. So rexx370 is a runtime
+prerequisite of a deployment, not a `[dependencies]` entry — do not add one.
+
+**lstring370** declares no dependency by design either: consumers inject
 `alloc`/`dealloc` through `struct lstr_alloc`, and the C runtime comes from the
-cc370 sysroot (`-lc`). Currently consumed by **rexx370** only — which is a
-separate, maintained project, not the unmaintained `brexx370` below.
+cc370 sysroot (`-lc`). Consumed by rexx370 only — which is a separate project
+from the unmaintained `brexx370` below, despite the name.
 
 | Project | Build | Status |
 |---------|-------|--------|
 | cc370, libc370 | make | host toolchain |
-| ufsd, ftpd, httpd, mvsmf, lstring370 | mbt v2 | migrated, building, CI green |
+| ufsd, ftpd, httpd, mvsmf, lstring370, httplua, httprexx | mbt v2 | migrated, building, CI green |
+| rexx370 | mbt v2 | building; no CI workflow yet |
 | mbt | — | active |
 
 ### Legacy / not maintained
