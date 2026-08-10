@@ -27,6 +27,7 @@ mvsmf    — z/OSMF REST API clone (httpd server module)  needs: libc370, ufsd(l
 httplua  — Lua CGI handler (httpd server module)        needs: libc370, ufsd, httpd, lua370
 httprexx — REXX Server Pages (httpd server module)      needs: libc370, ufsd, httpd
 rexx370  — REXX interpreter, TSO/E V2 compatible        needs: lstring370
+lua370   — Lua 5.4 engine: LUA/LUAC + liblua370.a       needs: — (sysroot libc only)
 lstring370 — Reentrant length-prefixed strings          needs: — (sysroot libc only)
 mbt      — MVS Build Tools (Python + Make)
 ```
@@ -44,14 +45,14 @@ from the unmaintained `brexx370` below, despite the name.
 | Project | Build | Status |
 |---------|-------|--------|
 | cc370, libc370 | make | host toolchain |
-| ufsd, ftpd, httpd, mvsmf, lstring370, httplua, httprexx | mbt v2 | migrated, building, CI green |
+| ufsd, ftpd, httpd, mvsmf, lstring370, httplua, httprexx, lua370 | mbt v2 | migrated, building, CI green |
 | rexx370 | mbt v2 | building; no CI workflow yet |
 | mbt | — | active |
 
 ### Legacy / not maintained
 
 No further work. Superseded: **c2asm370** → cc370, **crent370** → libc370.
-Also unmaintained: ufs370, ufs370-tools, lua370, ftp370, mqtt370 (+broker,
+Also unmaintained: ufs370, ufs370-tools, ftp370, mqtt370 (+broker,
 +cli), zlib370, brexx370.
 
 ---
