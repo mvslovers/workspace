@@ -18,19 +18,25 @@ target) with the **cc370** toolchain.
 ```
 cc370    — GCC 3.4.6 fork: full host toolchain
            (cc370 compiler, as370 assembler, ar370 archiver, ld370 linker)
-libc370  — Standard C library + MVS extras (base dependency for ALL targets)
-ufsd     — Unix-like virtual filesystem server      needs: libc370
+libc370  — Standard C library + MVS extras (base dependency for ALL targets - must be installed into hosts sysroot)
+ufsd     — Unix-like virtual filesystem server          needs: libc370
 ufsd-utils — ufsd tooling / utilities
-ftpd     — FTP server                               needs: libc370, ufsd(libufs)
-httpd    — HTTP server                              needs: libc370, ufsd(libufs)
-mvsmf    — z/OSMF REST API clone (CGI under httpd)  needs: libc370, ufsd(libufs), httpd(libhttpd)
+ftpd     — FTP server                                   needs: libc370, ufsd(libufs)
+httpd    — HTTP server                                  needs: libc370, ufsd(libufs)
+mvsmf    — z/OSMF REST API clone (httpd server module)  needs: libc370, ufsd(libufs), httpd(libhttpd)
+lstring370 — Reentrant length-prefixed strings          needs: — (sysroot libc only)
 mbt      — MVS Build Tools (Python + Make)
 ```
+
+**lstring370** declares no dependency by design: consumers inject
+`alloc`/`dealloc` through `struct lstr_alloc`, and the C runtime comes from the
+cc370 sysroot (`-lc`). Currently consumed by **rexx370** only — which is a
+separate, maintained project, not the unmaintained `brexx370` below.
 
 | Project | Build | Status |
 |---------|-------|--------|
 | cc370, libc370 | make | host toolchain |
-| ufsd, ftpd, httpd, mvsmf | mbt v2 | migrated, building, CI green |
+| ufsd, ftpd, httpd, mvsmf, lstring370 | mbt v2 | migrated, building, CI green |
 | mbt | — | active |
 
 ### Legacy / not maintained
@@ -228,7 +234,7 @@ HTTPD block is 320 bytes today, not the 288 some docs still say).
 
 ```
 /.dsrv?target=HTTPD|MGR|FS                 no address needed
-/.dsrv?target=CGI|TASK|FILE&m=<hex>        needs &m=
+/.dsrv?target=MOD|TASK|FILE&m=<hex>        needs &m=
 /.dm?m=<hex>&l=<bytes>&c=<chunk>&t=<title> l/c/t optional (c<=64)
 /.dmtt
 ```
@@ -253,10 +259,17 @@ JES2 cross-check.
 
 **Two cautions.**
 
-Trust the hex over the field table. `/.dsrv`'s HTTPCGI table is a version behind
-the struct (httpd#146): it reports `login` — a legacy field — and omits the
-`auth`/`res*` fields that actually decide the route's authorization, so it can
-state the opposite of the truth on an auth question.
+A route's `auth` decides, and httpd's gate is not the only gate.
+`?target=MOD` decodes the whole route block since httpd#146, so read `auth`
+(`+14`), not `login` (`+09` — legacy, and labelled as such). Two values do not
+mean what they look like: `AUTH=DEFAULT` is not "no authentication", it means
+the route carried no `AUTH=` keyword and inherits the global `LOGIN` policy;
+`resattr` 0 is the unset value `racf_auth()` reads as READ. And a route can be
+`AUTH=NONE` and still answer 401 — `/zosmf/info` is public to httpd, its 401
+comes from mvsMF's own auth track. Establish which layer answered before
+debugging httpd's. `http_debug()` (`?debug=cgi`) decodes the same fields since
+httpd#155, but as one line per route — reach for it to scan the whole table,
+for `?target=MOD` to read one route's every byte.
 
 Write curl flags out inline, never via a shell variable. zsh does not
 word-split unquoted `$VAR`, so `A="-u u:p"; curl $A …` sends the userid with a
