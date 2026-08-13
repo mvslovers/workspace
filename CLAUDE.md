@@ -49,6 +49,42 @@ from the unmaintained `brexx370` below, despite the name.
 | rexx370 | mbt v2 | building; no CI workflow yet |
 | mbt | — | active |
 
+### SMP4 FMIDs — assigned once, never reused
+
+Products are installed through **SMP Release 4** (the SMP that ships with
+MVS 3.8j, not SMP/E). A `[distribution]` table in `project.toml` makes
+`make package` build the install package; **ufsd is the reference
+implementation** — copy its block rather than inventing one.
+
+A SYSMOD id is 7 characters and names a *functional level*: `T` + 3 letters +
+version. That matches the form MVS 3.8j's own sysgen uses (`TMVS804`,
+`TJES801`, `TIST801`, `TNIP800`, `TTSO801`) and stays clear of IBM's `H`/`J`
+namespace. Service SYSMODs use `U`. One FMID per **minor** release; patches
+ship as PTFs against it, and a new minor is a clean cut (RESTORE + REJECT the
+old, then receive the new).
+
+| Project | FMID | Service | State |
+|---------|------|---------|-------|
+| ufsd 1.2.x | `TUFS120` | `UUFS001…` | assigned in `project.toml` |
+| ftpd 1.0.x | `TFTP100` | `UFTP001…` | proposed |
+| httpd 4.0.x | `THTP400` | `UHTP001…` | proposed |
+| mvsmf 0.1.x | `TZMF010` | `UZMF001…` | proposed |
+| rexx370 1.0.x | `TRXX100` | `URXX001…` | proposed |
+| nsf370 0.1.x | `TNSF010` | `UNSF001…` | proposed |
+
+**Burned, do not reuse:** `TUFS110` (ufsd 1.1.x — never released, but applied
+and accepted on a test system) and `TXPR100` (inline-delivery experiment,
+received and rejected on `mvsdev`).
+
+**Never `TMVS…`** — those are the MVS function SYSMODs of the sysgen.
+libc370 and lstring370 get no FMID at all: they are statically linked and do
+not exist on MVS.
+
+**A test install must use a throwaway id.** A half-applied FMID leaves the
+real one occupied, and you cannot check: the CDS stores hashed member names.
+The SMPPTS *can* be listed (MCS member names are the documented exception) —
+anything beyond that needs a `LIST SYSMODS` job.
+
 ### Legacy / not maintained
 
 No further work. Superseded: **c2asm370** → cc370, **crent370** → libc370.
@@ -127,7 +163,8 @@ make <name>     build one module (lowercase name, e.g. make httpd)
 make lib        the static library archive
 make test       build test modules
 make deps       download + stage declared dependencies into .mbt/deps
-make package    release artifacts in dist/ (load + lib tarballs)
+make package    release artifacts in dist/ (load + lib tarballs, + distribution)
+make dist       re-render the SMP install package alone (needs [distribution])
 make deploy     pack -> XMIT -> upload -> RECEIVE into the LINKLIB (touches MVS)
 make doctor     check toolchain + MVS connectivity
 make compiledb  write compile_commands.json for clangd
