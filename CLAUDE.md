@@ -57,11 +57,15 @@ MVS 3.8j, not SMP/E). A `[distribution]` table in `project.toml` makes
 implementation** — copy its block rather than inventing one.
 
 A SYSMOD id is 7 characters and names a *functional level*: `T` + 3 letters +
-version. That matches the form MVS 3.8j's own sysgen uses (`TMVS804`,
-`TJES801`, `TIST801`, `TNIP800`, `TTSO801`) and stays clear of IBM's `H`/`J`
-namespace. Service SYSMODs use `U`. One FMID per **minor** release; patches
-ship as PTFs against it, and a new minor is a clean cut (RESTORE + REJECT the
-old, then receive the new).
+version. Service SYSMODs use `U`. One FMID per **minor** release; patches ship
+as PTFs against it, and a new minor is a clean cut (RESTORE + REJECT the old,
+then receive the new).
+
+**`T` exists to stay out of IBM's namespace, and on MVS 3.8j that namespace is
+`E??nnnn`** — measured on both MVS/CE and TK5: `EBB1102` is MVS 3.8j itself
+(`TYPE=FUNCTION`, `STATUS=REC ACC RGN`), alongside `EAS1102`, `EBT1102`,
+`EDE1102`, `EDM1102`, `EDS1102`, `EJE1103`, `EVT0108`, `ETV0108`. **Do not
+move our ids to `E…`** — that is precisely the namespace being avoided.
 
 | Project | FMID | Service | State |
 |---------|------|---------|-------|
@@ -76,14 +80,37 @@ old, then receive the new).
 and accepted on a test system) and `TXPR100` (inline-delivery experiment,
 received and rejected on `mvsdev`).
 
-**Never `TMVS…`** — those are the MVS function SYSMODs of the sysgen.
+**Never `TMVS…`** — MVS/CE carries applied USERMODs called `TMVS804`,
+`TMVS816` and `TMVS817`, and TK5 does not carry them at all. That makes the
+collision **distribution-specific**: you would find it on one system and miss
+it on the other. The same holds for `TIST801`, `TJES801`, `TNIP800` and
+`TTSO801` — all USERMODs on MVS/CE, absent on TK5.
+
 libc370 and lstring370 get no FMID at all: they are statically linked and do
 not exist on MVS.
 
 **A test install must use a throwaway id.** A half-applied FMID leaves the
-real one occupied, and you cannot check: the CDS stores hashed member names.
-The SMPPTS *can* be listed (MCS member names are the documented exception) —
-anything beyond that needs a `LIST SYSMODS` job.
+real one occupied.
+
+### Checking whether an id is free
+
+```
+//LIST    EXEC SMPAPP
+//SMPCNTL  DD  *
+ LIST CDS SYSMOD(TUFS120) .
+/*
+```
+
+The zone operand is **mandatory** (`CDS` = applied, `ACDS` = accepted); bare
+`LIST SYSMODS .` is SMP/E syntax and gets `HMA2033 SYNTAX ERROR`. **RC 04 with
+an empty list means the id is free**; a hit prints `TYPE`, `STATUS`
+(`REC`/`APP`/`ACC`) and the `FMID` it belongs to. Qualify it — `LIST CDS .`
+dumps the entire inventory, 116 000 lines on MVS/CE.
+
+`SYS1.SMPPTS` can also be listed directly, because MCS entry names are the one
+documented unencoded case — but that shows only what was *received*. The CDS
+and ACDS store hashed member names, so `LIST` is the only way to see what is
+actually installed.
 
 ### Legacy / not maintained
 
