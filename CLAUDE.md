@@ -58,8 +58,47 @@ implementation** — copy its block rather than inventing one.
 
 A SYSMOD id is 7 characters and names a *functional level*: `T` + 3 letters +
 version. Service SYSMODs use `U`. One FMID per **minor** release; patches ship
-as PTFs against it, and a new minor is a clean cut (RESTORE + REJECT the old,
-then receive the new).
+as PTFs against it, and a new minor is a clean cut.
+
+**That cut is not RESTORE + REJECT, and getting it wrong installs nothing at
+RC 0.** Both are refused once the FMID has been accepted — which our install
+jobs do, in the same run as the APPLY. The replacement is the UCLIN job in each
+project's `doc/uninstall.md`, and it must delete the **element** entries, not
+just the SYSMOD: `DEL MOD(<mod>)` and `DEL LMOD(<mod>)` in CDS *and* ACDS. In
+SMP4 an element belongs to the FMID that installed it, and a SYSMOD carrying a
+different FMID does not replace an element it does not own. SMP skips it and
+prints one column of one report:
+
+```
+ELEM   ELEMENT   ELEM
+TYPE   NAME      STATUS
+MOD    FTPD      NOT SEL
+```
+
+Everything else says success: RECEIVE/APPLY CHECK/APPLY/ACCEPT all RC 00,
+`HMA2270 … SUCCESSFULLY COMPLETED`, `STATUS = REC APP ACC` in both zones — and
+an empty target library. The message that separates a real install from that
+one is `HMA2380 COPY SUCCESSFUL - MOD=… - LMOD=… - LIBRARY=…`; if it is not in
+the job log, nothing was copied. Measured both ways on mvsdev 2026-09-13
+(ftpd 1.1.0-dev, jobs FTPDINS JOB00269 and JOB00281). **Verify every install by
+listing the members of the target library**, never by the condition codes.
+
+This bites any project moving to a new minor: ufsd 1.2→1.3 and httpd 4.0→4.1
+face the identical wall.
+
+**The FMID and the dataset qualifier move at different rates, and every patch
+release trips over it.** `@VRM@` is derived from the *full* version, so ftpd
+1.0.2 packages `FTPD.V1R0M2.*` while it still ships as `TFTP100`. The libraries
+therefore never collide with the predecessor's — only the FMID does, and SMP
+refuses to receive an id that is already `REC APP ACC`. So a patch install is
+**UCLIN to free the FMID, then the shipped alloc + inst jobs unchanged**, and
+the uninstall job's `DELETE` step must *not* be run: it names the previous
+release's datasets, which the new install does not touch. Say "V1R0M2 for
+1.0.2", never "V1R0M0 for 1.0.x" — that phrasing was wrong in ftpd's uninstall
+guide until 2026-09-05, and following it scratched the orphaned libraries while
+leaving the live installation standing, with SMP reporting accepted throughout.
+The same phrasing is still in ufsd's `project.toml` (`V1R2M0 at package time`);
+ufsd 1.2.2 in fact packages `UFSD.V1R2M2`.
 
 **`T` exists to stay out of IBM's namespace, and on MVS 3.8j that namespace is
 `E??nnnn`** — measured on both MVS/CE and TK5: `EBB1102` is MVS 3.8j itself
@@ -70,7 +109,7 @@ move our ids to `E…`** — that is precisely the namespace being avoided.
 | Project | FMID | Service | State |
 |---------|------|---------|-------|
 | ufsd 1.2.x | `TUFS120` | `UUFS001…` | assigned in `project.toml` |
-| ftpd 1.0.x | `TFTP100` | `UFTP001…` | proposed |
+| ftpd 1.0.x | `TFTP100` | `UFTP001…` | assigned in `project.toml` |
 | httpd 4.0.x | `THTP400` | `UHTP001…` | proposed |
 | mvsmf 0.1.x | `TZMF010` | `UZMF001…` | proposed |
 | rexx370 1.0.x | `TRXX100` | `URXX001…` | proposed |
@@ -296,9 +335,38 @@ ufsd, ftpd or mbt.
 
 HTTPD ships display modules that read live MVS storage over HTTP. They are the
 fastest way to answer "what does the control block actually say" without a dump,
-and they are read-only. Use them **before** theorising about a control-block or
-timing problem — a measured field beats a guess, and `docs/` can be stale (the
-HTTPD block is 320 bytes today, not the 288 some docs still say).
+and they read nothing they should not — a measured field beats a guess, and
+`docs/` can be stale — including this line, which claimed 320 bytes long after
+the HTTPD block had grown to **392 (`0x188`)**. The struct's own trailer comment
+in `httpd.h` says so; measure it there or with `?target=HTTPD` rather than
+trusting any prose, this paragraph included.
+
+**They were expensive until 2026-08-19, and on an older httpd they still are.**
+Each display module is a separate load module that httpd re-LINKs per request,
+and until `6448dd0` none of them set `__stklen` — so every `/.dm` or `/.dsrv`
+hit demanded **262328 contiguous bytes** of subpool 0 against 65584 for an
+ordinary CGI (mvslovers/httpd#196). Measured on mvsdev before that fix: 587
+ordinary requests left the address space healthy, then two display calls, and
+the next module load failed `IEA703I 106-0F` — insufficient *contiguous*
+storage — killing every CGI on that HTTPD until `P HTTPD` / `S HTTPD`. Two
+quarter-megabyte holes, fenced off, exactly the anvil mechanism of
+mvslovers/httpd#195.
+
+With `__stklen` set they cost what any CGI request costs, so on a current httpd
+use them freely. **Check the build before leaning on them on an unfamiliar
+stand**, and if one is old, treat a display call as a quarter-megabyte demand
+rather than a free look.
+
+One trap survives the fix: when a stand is already short of storage, the
+instinct is to reach for `/.dmtt` to read the console log — the module that
+renders the entire Master Trace Table, in the address space that is struggling.
+Read the console another way.
+
+And if you meet `HTTPD908E EXTERNAL PROGRAM … could not be loaded (not found in
+STEPLIB?)`, **the parenthetical is a guess and it is often wrong.** The real
+abend code sits in the `IEA703I` line next to it: `106-0F` is storage, not a
+missing member. Check that before hunting a member that is present
+(mvslovers/httpd#210).
 
 | Endpoint | Shows |
 |----------|-------|
@@ -318,13 +386,22 @@ Chase a pointer by feeding it back into `/.dm`: `CVTPTR` lives at `0x10`, so
 the system timezone. That is how httpd#145 was pinned down instead of guessed.
 
 **They are not registered by default.** In 4.0.0 nothing is active unless
-`DD:HTTPDPRM` says so:
+`DD:HTTPPRM` says so:
 
 ```
-MOD=HTTPDSRV  /.dsrv
-MOD=HTTPDM    /.dm
-MOD=HTTPDMTT  /.dmtt
+MOD=HTTPDSRV  /.dsrv    AUTH=FORM
+MOD=HTTPDM    /.dm      AUTH=BASIC
+MOD=HTTPDMTT  /.dmtt    AUTH=BASIC
 ```
+
+**Write the `AUTH=` — a route without one is public.** Since httpd#105 there is
+no global `LOGIN` policy to fall back to, so a line reading just
+`MOD=HTTPDM /.dm` hands anyone who can reach the port arbitrary storage reads,
+and `/.dmtt` hands them the console log. That was already true whenever the
+member set no `LOGIN`, which was the usual case; what #105 changed is that such
+a route now *reads* `AUTH=NONE (public)` in `?target=MOD`, where `AUTH=DEFAULT`
+used to require knowing the global policy to interpret. Measured on mvsdev
+2026-08-22: both answered `200` unauthenticated.
 
 Also present, both superseded by mvsMF and only worth touching when working on
 them: `MOD=HTTPDSL /dsl/*` (dataset lister) and `MOD=HTTPJES2 /jes/*` (JES
@@ -335,15 +412,27 @@ JES2 cross-check.
 
 A route's `auth` decides, and httpd's gate is not the only gate.
 `?target=MOD` decodes the whole route block since httpd#146, so read `auth`
-(`+14`), not `login` (`+09` — legacy, and labelled as such). Two values do not
-mean what they look like: `AUTH=DEFAULT` is not "no authentication", it means
-the route carried no `AUTH=` keyword and inherits the global `LOGIN` policy;
-`resattr` 0 is the unset value `racf_auth()` reads as READ. And a route can be
-`AUTH=NONE` and still answer 401 — `/zosmf/info` is public to httpd, its 401
-comes from mvsMF's own auth track. Establish which layer answered before
-debugging httpd's. `http_debug()` (`?debug=cgi`) decodes the same fields since
-httpd#155, but as one line per route — reach for it to scan the whole table,
-for `?target=MOD` to read one route's every byte.
+(`+14`); `+09` is a reserved byte since httpd#105 retired the per-route `login`
+flag with the global bitmask. Since that change `auth` holds four values and no
+"unset" one — a route showing `AUTH=NONE` is public, whether the line said
+`AUTH=NONE` or said nothing at all. The one line that reads public and is not
+is `RES=` without `AUTH=`: a resource check needs an identity, so httpd resolves
+that route to `BASIC` while parsing, and `?target=MOD` shows the `BASIC`.
+`resattr` 0 is likewise the unset value `racf_auth()` reads as READ.
+
+And a route can be `AUTH=NONE` and still answer 401 — `/zosmf/info` is public to
+httpd, its 401 comes from mvsMF's own auth track. Establish which layer answered
+before debugging httpd's.
+
+**There is no `?debug=` query parameter any more.** `http_debug()` and its
+`mod` / `vars` / `help` options were removed in httpd#225. It appended its dump
+as a trailer to a response that had already been framed, so it could only ever
+attach to a body whose length was *not* known in advance — display modules,
+404s, error pages. Never a static file and never a mvsMF route: both set
+`Content-Length`, and past that a client stops reading.
+
+`?target=MOD` is the way to read the route table, and always was — `display_route()`
+loops the whole array, one full field table plus hex per route.
 
 Write curl flags out inline, never via a shell variable. zsh does not
 word-split unquoted `$VAR`, so `A="-u u:p"; curl $A …` sends the userid with a
@@ -361,6 +450,10 @@ authenticated request unexpectedly 401s, decode what was actually sent
 - Commit messages: clear English, *what* and *why*. **Never mention AI,
   Claude, or any AI tool** in commits, code, or docs — no exceptions.
 - Use the `gh` CLI for Issues/PRs.
+- **After every commit, push or PR merge: update the project's `TODO.md`, if it
+  has one.** Strike what landed, drop what the change made obsolete, and re-rank
+  when the priorities moved. A `TODO.md` that lags behind `main` is worse than
+  none at all, because it is read as current.
 
 ---
 
