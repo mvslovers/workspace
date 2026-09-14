@@ -57,13 +57,13 @@ MVS 3.8j, not SMP/E). A `[distribution]` table in `project.toml` makes
 implementation** — copy its block rather than inventing one.
 
 **The id is the release.** `T` + three product letters + the three version
-digits: ufsd 1.2.3 is `TUFS123`, httpd 4.1.0 is `THTP410`. One id per
+digits: ufsd 1.3.0 is `TUFS130`, httpd 4.1.0 is `THTP410`. One id per
 release, never re-spent, and each release's SYSMOD **deletes its
 predecessor**:
 
 ```toml
 [distribution.smp]
-fmid   = "TUFS123"
+fmid   = "TUFS130"
 delete = ["TUFS120"]      # the level this one replaces
 ```
 
@@ -73,9 +73,9 @@ next major — 1.2.10 cannot be expressed and must not be released. Service
 SYSMODs (`U…`) stay reserved and unused: mbt emits `++FUNCTION` only, there is
 no `make ptf`, so a patch is a new function level, not a PTF.
 
-Version numbers may skip in the id space and that is normal: ufsd went 1.2.0 →
-1.2.3 under the old per-minor rule, so `TUFS121` and `TUFS122` are simply never
-assigned. Do not "fix" a gap.
+Version numbers may skip in the id space and that is normal: ufsd 1.2.0, 1.2.1
+and 1.2.2 all shipped under `TUFS120` when the rule was one id per *minor*, so
+`TUFS121` and `TUFS122` are never assigned. Do not "fix" a gap.
 
 **How DELETE works**, measured on mvsdev 2026-09-14 (HMASMP LVL 04.48, jobs
 JOB00291 / JOB00293 / JOB00296–00299):
@@ -136,7 +136,7 @@ move our ids to `E…`** — that is precisely the namespace being avoided.
 
 | Project | FMID | Deletes | State |
 |---------|------|---------|-------|
-| ufsd 1.2.3 | `TUFS123` | `TUFS120` | to assign (ufsd#75) |
+| ufsd 1.3.0 | `TUFS130` | `TUFS120` | assigned in `project.toml` (ufsd#75) |
 | ftpd 1.1.0 | `TFTP110` | `TFTP100` | in `project.toml`, unspent — add `delete` |
 | httpd 4.1.0 | `THTP410` | `THTP400` | in `project.toml`, unspent — add `delete` |
 | mvsmf 1.0.1 | `TZMF101` | — | proposed (first level; 1.0.0 shipped with no `[distribution]`, so `TZMF010` was never assigned) |
