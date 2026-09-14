@@ -179,7 +179,11 @@ never the data set behind it — the CDS `LMOD` entry reads `SYSTEM LIBRARY =
 LINKLIB`. So a SYSMOD deleting its predecessor resolves that ddname in **its
 own** job, deletes from the new library, and leaves the old data set populated,
 working and still APF-authorised, with nothing in the job log naming it.
-Measured on mvsdev 2026-09-14 (mvslovers/ftpd#145).
+Measured on mvsdev 2026-09-14 (mvslovers/ftpd#145) with a throwaway module name
+in libraries belonging to no product — **this is SMP's behaviour, not any one
+project's**, so it transfers to every project in the ecosystem without a
+per-project measurement. What does need checking per project is only which of
+the two cases below it falls into.
 
 Two consequences for a project dropping the version qualifier:
 
