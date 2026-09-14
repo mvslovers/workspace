@@ -126,6 +126,22 @@ The message that separates a real install from that one is
 `HMA2380 COPY SUCCESSFUL - MOD=… - LMOD=… - LIBRARY=…`. **Verify every install
 by listing the members of the target library**, never by the condition codes.
 
+**That generalises, and it cost three projects a day each.** A condition code
+says whether a job ran, never whether the work happened — met three times
+independently on 2026-09-14: the `NOT SEL` install above (RC 00, empty target
+library); an upgrade whose `STEPLIB` was never re-pointed (every step RC 00,
+old server still serving); and a multi-line IDCAMS scratch that deleted one of
+six data sets and reported a single non-zero code (httpd, drnmig3a). Each time
+the inventory answered correctly and the return code did not. **Read the
+inventory — the member list, the `LIST` stanza, the startup banner.**
+
+That IDCAMS run carries a trap of its own, and it belongs to the transport
+rather than to IDCAMS: **`^` does not survive the mvsMF REST API.** `IF LASTCC
+^= 0` arrives as `.=`, IDCAMS answers `IDC4229I INVALID RELATIONAL EXPRESSION`
+and then discards the rest of the input stream — so every statement after the
+bad card is skipped and the job reports one error instead of five omissions.
+Write `NE`, and list afterwards (httpd, 2026-09-14).
+
 Two consequences:
 
 - Versioning the product datasets never bought a clean cut between releases —
@@ -143,8 +159,8 @@ move our ids to `E…`** — that is precisely the namespace being avoided.
 | Project | FMID | Deletes | State |
 |---------|------|---------|-------|
 | ufsd 1.3.1 | `TUFS131` | `TUFS130` | assigned; 1.3.0 released 2026-09-14 under `TUFS130` |
-| ftpd 1.1.0 | `TFTP110` | `TFTP100` | in `project.toml`, unspent — add `delete` |
-| httpd 4.1.0 | `THTP410` | `THTP400` | in `project.toml`, unspent — add `delete` |
+| ftpd 1.1.1 | `TFTP111` | `TFTP110` | assigned; 1.1.0 released 2026-09-14 under `TFTP110`. Free on mvsdev (`FMIDCHK JOB00332`) and drnmig3a (`FTPDCHK JOB00045`) |
+| httpd 4.1.0 | `THTP410` | `THTP400` | assigned, unspent. Free on mvsdev (`FMIDCHK JOB00288`) and drnmig3a (`FMIDCHK JOB00034`) |
 | mvsmf 1.0.1 | `TZMF101` | — | proposed (first level; 1.0.0 shipped with no `[distribution]`, so `TZMF010` was never assigned) |
 | rexx370 1.0.0 | `TRXX100` | — | proposed (first level) |
 | nsf370 0.1.0 | `TNSF010` | — | proposed (first level) |
@@ -152,10 +168,10 @@ move our ids to `E…`** — that is precisely the namespace being avoided.
 **Burned, do not reuse:** `TUFS110` (ufsd 1.1.x — never released, but applied
 and accepted on a test system), `TUFS120` (ufsd 1.2.0–1.2.2, `REC APP ACC` on
 mvsdev), `TUFS130` (ufsd 1.3.0, released 2026-09-14), `TFTP100` (ftpd 1.0.x,
-released), `THTP400` (httpd 4.0.x, `REC APP
-ACC` on mvsdev), `TXPR100` (inline-delivery experiment, received and rejected
-on `mvsdev`) and `TTST001`–`TTST004` (the `++VER DELETE` measurement,
-2026-09-14).
+released), `TFTP110` (ftpd 1.1.0, released 2026-09-14), `THTP400` (httpd 4.0.x,
+`REC APP ACC` on mvsdev), `TXPR100` (inline-delivery experiment, received and rejected
+on `mvsdev`) and `TTST001`–`TTST007` (the `++VER DELETE` measurement and
+the `REQ` semantics probe, both 2026-09-14).
 
 **Never `TMVS…`** — MVS/CE carries applied USERMODs called `TMVS804`,
 `TMVS816` and `TMVS817`, and TK5 does not carry them at all. That makes the
@@ -201,16 +217,93 @@ Two consequences for a project dropping the version qualifier:
   the cause is not** — `HMA2832` names a ddname and says nothing about a
   renamed data set. Read this paragraph before renaming one.
 
+**An APF entry is `dsname` *plus* volser, and the rename upgrade replaces one
+rather than adding one.** A library that is present but sitting on a different
+volume is there and not authorised: ufsd degrades quietly to SVC 244 where RAKF
+permits it and does not start at all where it does not, and `UFSD007I` reports
+which route it took (ufsd-measured). Two consequences once the old data set is
+scratched: the new entry must *replace* the old, and an orphaned entry is more
+dangerous after the scratch than before it, because a data set later allocated
+under that name **on that volume** inherits the authorisation the entry still
+grants. So an orphan left behind is worse than an old library left in place
+(the volser pairing is measured; the orphan hazard is httpd's inference and has
+not been measured).
+
 **A DELETE leaves a tombstone in both zones**, even for an id that was never
 installed: `TYPE = FUNCTION` / `DELBY = <new>`. `LIST` answers **RC 00** for it,
 so the "RC 04 and an empty list means free" rule above has a third state — read
-the stanza, not the return code. A plain `UCLIN … DEL SYSMOD(<old>)` clears it,
-and a removal job should do so.
+the stanza, not the return code. A plain `UCLIN … DEL SYSMOD(<old>)` clears it
+— measured by httpd on drnmig3a 2026-09-14 (`TSTHCLN JOB00043`, 29 ×
+`HMA2550`, COND 0000).
+
+**They accumulate, one per upgrade, so a removal job must name every id the
+product has ever spent.** A system that took two upgrades holds two tombstones;
+deleting the release plus its immediate predecessor clears the newer and leaves
+the older standing for good. Nothing reports that: the `LIST` answers only
+about the ids it was given, and a surviving tombstone answers RC 00 while the
+cleared ones answer RC 04, so it does not even lift the step's return code.
+Write one `DEL SYSMOD(<id>)` per spent id in both zones. An id this system
+never saw reports nothing to do, so the list needs no judgement about which
+releases the system has seen — and that judgement is precisely what goes wrong.
+ufsd's `docs/uninstall.md` is the worked example.
 
 **Also open: mvslovers/mbt#99** — re-running a failed install skips APPLY CHECK.
 `RECV` ends RC 08 on an already-received SYSMOD, `APPLYCHK` is bypassed by its
 COND, and `APPLY`'s `COND=(0,NE,APPLYCHK.HMASMP)` names a bypassed step, which
 JCL ignores. That is the recovery path, not an exotic one.
+
+**Name the stands, with job numbers, every time an id is reported free.** One
+stand is not enough — the `TMVS…`/`TIST801` collisions below are applied on
+MVS/CE and absent on TK5, so a single check finds them on one system and misses
+them on the other. And coverage that is inferred from a neighbouring row goes
+wrong in both directions: a row that silently covers one stand where the row
+above covered two reads as equally thorough (ftpd, 2026-09-14), and a stale
+"one stand only" note understates coverage and holds back a release that was
+ready (httpd, same day). Neither was written untruthfully; both are invisible
+without job numbers.
+
+### `REQ` is an AND, so it cannot express a version floor
+
+**Measured on mvsdev 2026-09-14** (job `TZMFREQ`, throwaway ids `TTST005`–
+`TTST007`, APPLY CHECK only, all three REJECTed afterwards). Three SYSMODs
+carrying nothing but a `++VER`:
+
+| `REQ` | APPLY CHECK |
+|---|---|
+| `REQ(THTP410)` — installed | **CC 0000** |
+| `REQ(TZZZ999)` — absent | CC 0012 |
+| `REQ(THTP410,TZZZ999)` | **CC 0012** |
+
+```
+HMA3022 ** APPLY PROCESSING TERMINATED FOR SYSMOD TTST007
+        - REASON = MISSING/NOGO REQUISITES:
+HMA3590     --- TZZZ999 REQ
+```
+
+A present requisite does not satisfy a list that also names an absent one:
+`REQ` is **conjunctive**. So the tempting shape — name every level of a
+dependency you can work with, `REQ(THTP410,THTP411,…)`, and add the next one
+each release — demands **all of them installed at once**, which one-id-per-
+release makes impossible: `THTP410` itself carries `DELETE VER(001) = THTP400`.
+Such a list makes the product uninstallable everywhere.
+
+There is no range syntax either, so `REQ` can only ever say *"exactly this
+level"*. That fails in both directions for a dependency that moves: an older
+level does not satisfy it, and a system where a **newer** one was installed
+fresh never saw the id being named.
+
+**So a version floor on another product belongs in the installation guide, as
+prose.** Every project in the ecosystem declares `prereq = []` and says so in
+its docs — httpd on UFSD, mvsMF on httpd. `REQ` remains right only for a
+genuinely fixed co-requisite that will not move.
+
+Two things the probe also settled: a `++FUNCTION` with no elements is received
+without complaint (`HMA3971 … HAS NO ELEMENTS` is a warning, `HMA3930
+SUCCESSFULLY RECEIVED` follows), so a requisite question needs no throwaway
+module names — the APPLY CHECK fails long before elements matter. And `REJECT`
+does clean a received-but-never-applied id out of the inventory (`HMA2270`,
+then `LIST` reports RC 04 not found) — but the id stays **burned** all the
+same, exactly as `TXPR100` did.
 
 ### Checking whether an id is free
 
@@ -368,6 +461,56 @@ it). To develop against an unreleased dependency, use `.mbt/deps.local.toml`
 (`[override]`, gitignored) — see `mbt/docs/MIGRATION.md`.
 
 ---
+
+## Three libraries, three owners — the deploy convention
+
+Now that products install through SMP, **`<PROD>.LINKLIB` belongs to SMP and
+nothing else may write to it.** A `make deploy` into that library leaves the
+inventory describing a level that is not on disk, and SMP cannot notice.
+
+So each project's `project.toml` names its own development library:
+
+```toml
+[deploy]
+target = "MVSMF.DEV.LINKLIB"
+```
+
+| Library | Owner | Filled by |
+|---|---|---|
+| `<PROD>.LINKLIB` | SMP | the install job, and only that |
+| `<PROD>.DEV.LINKLIB` | development | `make deploy` |
+| `HTTPD.LINKLIB` | httpd | httpd's own install |
+
+**The DEV name carries no HLQ on purpose.** For a development level to be
+reachable it has to be named in a started task's STEPLIB, and a procedure can
+only name a fixed data set — a per-developer HLQ would need a per-developer
+STC. Anyone sharing a server shares the running level anyway, so the isolation
+the old `{HLQ}.{PROJECT}.{VRM}.LINKLIB` gave was only ever in the staging step,
+never where it mattered.
+
+**Put DEV first in the concatenation**, ahead of the SMP library. Whichever
+comes first wins, so that makes a deploy override the installed level — and
+removing the DD goes back to it. The same rule is why a copy of a module placed
+into another product's library by hand is a trap: it shadows both, and an
+install into the right library then activates nothing while every step reports
+success.
+
+**Every library in an authorized STEPLIB concatenation must be APF-authorized**
+— one that is not silently de-authorizes the whole task, and the failure that
+follows does not name the cause. So a DEV library needs its own `IEAAPF00`
+entry beside the SMP one, with the volume the allocation actually used (the
+alloc template's bare `UNIT=SYSDA` is `mbt#102`). MVS 3.8j reads `IEAAPF00` at
+IPL and has no dynamic APF, so adding either needs one — do both at once.
+
+**A DEV library has no business on a production system.** Sitting first in a
+concatenation, it silently runs a development build; `?fn=version` (or the
+equivalent) is the check.
+
+Note the deploy still needs its activation step today: `make deploy` DELETEs
+the target library before the RECEIVE (NJE RECEIVE will not merge), which
+cannot work on a library a running server holds. Merging the member instead
+would let a deploy activate by itself — no IEBCOPY, no restart — and is
+**`mbt#105`**.
 
 ## Configuration (`.env`, for deploy)
 
