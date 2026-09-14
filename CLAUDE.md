@@ -173,12 +173,37 @@ product dataset names in **mvslovers/ufsd#75** (ufsd is on 1.3.0-dev, FMID
 Still to adopt: **mvslovers/ftpd#143** and **mvslovers/httpd#269**; httpd
 carries the dataset half separately in its #259/#267.
 
-**Not yet measured:** a DELETE whose predecessor's modules live in a
-*different* dataset than the new SYSMOD's target. Every measurement so far had
-both in the same library. SMP deletes by ddname, so the `HMA2240` lines are
-expected to report against the new library and leave the old dataset standing —
-which the upgrade guide scratches by hand anyway. The first real 1.2.x → 1.3.0
-install settles it.
+**A DELETE never touches the predecessor's data set, and this is the trap of
+the rename.** SMP records the *ddname* an element was installed through and
+never the data set behind it — the CDS `LMOD` entry reads `SYSTEM LIBRARY =
+LINKLIB`. So a SYSMOD deleting its predecessor resolves that ddname in **its
+own** job, deletes from the new library, and leaves the old data set populated,
+working and still APF-authorised, with nothing in the job log naming it.
+Measured on mvsdev 2026-09-14 (mvslovers/ftpd#145).
+
+Two consequences for a project dropping the version qualifier:
+
+- **Last qualifier unchanged** (`FTPD.V1R0M2.LINKLIB` → `FTPD.LINKLIB`, both
+  `LINKLIB`): the install succeeds. Re-pointing `STEPLIB`/`IEAAPF00` and
+  scratching the old libraries are then *the upgrade*, not housekeeping — skip
+  them and the old server keeps running while every condition code says the
+  upgrade worked. ufsd and ftpd are both this case.
+- **Last qualifier changed**: APPLY CHECK fails RC 12 with `HMA2832 <dd> DDCARD
+  MISSING` and the APPLY is skipped. It fails safely, but the shipped job needs
+  a `//HMASMP.<olddd> DD` naming the old data set, which the generator cannot
+  emit — `delete` is a list of ids and carries no DSNs. Filed as
+  **mvslovers/mbt#100**.
+
+**A DELETE leaves a tombstone in both zones**, even for an id that was never
+installed: `TYPE = FUNCTION` / `DELBY = <new>`. `LIST` answers **RC 00** for it,
+so the "RC 04 and an empty list means free" rule above has a third state — read
+the stanza, not the return code. A plain `UCLIN … DEL SYSMOD(<old>)` clears it,
+and a removal job should do so.
+
+**Also open: mvslovers/mbt#99** — re-running a failed install skips APPLY CHECK.
+`RECV` ends RC 08 on an already-received SYSMOD, `APPLYCHK` is bypassed by its
+COND, and `APPLY`'s `COND=(0,NE,APPLYCHK.HMASMP)` names a bypassed step, which
+JCL ignores. That is the recovery path, not an exotic one.
 
 ### Checking whether an id is free
 
