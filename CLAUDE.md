@@ -192,7 +192,10 @@ Two consequences for a project dropping the version qualifier:
   MISSING` and the APPLY is skipped. It fails safely, but the shipped job needs
   a `//HMASMP.<olddd> DD` naming the old data set, which the generator cannot
   emit — `delete` is a list of ids and carries no DSNs. Filed as
-  **mvslovers/mbt#100**.
+  **mvslovers/mbt#100**. Neither ufsd nor ftpd is in this case; the first
+  project to change a last qualifier will be, and **the failure is loud while
+  the cause is not** — `HMA2832` names a ddname and says nothing about a
+  renamed data set. Read this paragraph before renaming one.
 
 **A DELETE leaves a tombstone in both zones**, even for an id that was never
 installed: `TYPE = FUNCTION` / `DELBY = <new>`. `LIST` answers **RC 00** for it,
