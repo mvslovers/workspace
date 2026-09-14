@@ -69,7 +69,13 @@ delete = ["TUFS120"]      # the level this one replaces
 
 **No version component may ever exceed 9.** There is no room in a 7-character
 id for a second digit, so at patch 9 you cut the next minor and at minor 9 the
-next major — 1.2.10 cannot be expressed and must not be released. Service
+next major — 1.2.10 cannot be expressed and must not be released.
+
+**`make release` does not move the id.** It bumps `VERSION` and the project
+version and stops, so the tree comes out of a release carrying the id that was
+just spent. Bumping `fmid` and `delete` is part of *preparing* the next
+release; do it in the same commit that follows the bump, before anything is
+built from that tree. Service
 SYSMODs (`U…`) stay reserved and unused: mbt emits `++FUNCTION` only, there is
 no `make ptf`, so a patch is a new function level, not a PTF.
 
@@ -136,7 +142,7 @@ move our ids to `E…`** — that is precisely the namespace being avoided.
 
 | Project | FMID | Deletes | State |
 |---------|------|---------|-------|
-| ufsd 1.3.0 | `TUFS130` | `TUFS120` | assigned in `project.toml` (ufsd#75) |
+| ufsd 1.3.1 | `TUFS131` | `TUFS130` | assigned; 1.3.0 released 2026-09-14 under `TUFS130` |
 | ftpd 1.1.0 | `TFTP110` | `TFTP100` | in `project.toml`, unspent — add `delete` |
 | httpd 4.1.0 | `THTP410` | `THTP400` | in `project.toml`, unspent — add `delete` |
 | mvsmf 1.0.1 | `TZMF101` | — | proposed (first level; 1.0.0 shipped with no `[distribution]`, so `TZMF010` was never assigned) |
@@ -145,7 +151,8 @@ move our ids to `E…`** — that is precisely the namespace being avoided.
 
 **Burned, do not reuse:** `TUFS110` (ufsd 1.1.x — never released, but applied
 and accepted on a test system), `TUFS120` (ufsd 1.2.0–1.2.2, `REC APP ACC` on
-mvsdev), `TFTP100` (ftpd 1.0.x, released), `THTP400` (httpd 4.0.x, `REC APP
+mvsdev), `TUFS130` (ufsd 1.3.0, released 2026-09-14), `TFTP100` (ftpd 1.0.x,
+released), `THTP400` (httpd 4.0.x, `REC APP
 ACC` on mvsdev), `TXPR100` (inline-delivery experiment, received and rejected
 on `mvsdev`) and `TTST001`–`TTST004` (the `++VER DELETE` measurement,
 2026-09-14).
