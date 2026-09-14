@@ -159,11 +159,19 @@ it on the other. The same holds for `TIST801`, `TJES801`, `TNIP800` and
 libc370 and lstring370 get no FMID at all: they are statically linked and do
 not exist on MVS.
 
-**Status of the tooling.** `[distribution.smp] delete` and the relaxed ACCEPT
-gate are **mvslovers/mbt#98**, open. The unversioned product dataset names
-(`UFSD.LINKLIB`, not `UFSD.V1R2M3.LINKLIB`) are **mvslovers/ufsd#75**, open.
-The policy above is decided; until those two merge, `main` still carries the
-old shape.
+**Status of the tooling.** Both halves have landed: `[distribution.smp] delete`
+and the relaxed ACCEPT gate in **mvslovers/mbt#98**, and the unversioned
+product dataset names in **mvslovers/ufsd#75** (ufsd is on 1.3.0-dev, FMID
+`TUFS130`). ufsd is the worked example — copy its `[distribution]` block.
+Still to adopt: **mvslovers/ftpd#143** and **mvslovers/httpd#269**; httpd
+carries the dataset half separately in its #259/#267.
+
+**Not yet measured:** a DELETE whose predecessor's modules live in a
+*different* dataset than the new SYSMOD's target. Every measurement so far had
+both in the same library. SMP deletes by ddname, so the `HMA2240` lines are
+expected to report against the new library and leave the old dataset standing —
+which the upgrade guide scratches by hand anyway. The first real 1.2.x → 1.3.0
+install settles it.
 
 ### Checking whether an id is free
 
