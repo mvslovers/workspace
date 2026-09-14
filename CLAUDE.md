@@ -49,25 +49,59 @@ from the unmaintained `brexx370` below, despite the name.
 | rexx370 | mbt v2 | building; no CI workflow yet |
 | mbt | — | active |
 
-### SMP4 FMIDs — assigned once, never reused
+### SMP4 FMIDs — one per release, spent exactly once
 
 Products are installed through **SMP Release 4** (the SMP that ships with
 MVS 3.8j, not SMP/E). A `[distribution]` table in `project.toml` makes
 `make package` build the install package; **ufsd is the reference
 implementation** — copy its block rather than inventing one.
 
-A SYSMOD id is 7 characters and names a *functional level*: `T` + 3 letters +
-version. Service SYSMODs use `U`. One FMID per **minor** release; patches ship
-as PTFs against it, and a new minor is a clean cut.
+**The id is the release.** `T` + three product letters + the three version
+digits: ufsd 1.2.3 is `TUFS123`, httpd 4.1.0 is `THTP410`. One id per
+release, never re-spent, and each release's SYSMOD **deletes its
+predecessor**:
 
-**That cut is not RESTORE + REJECT, and getting it wrong installs nothing at
-RC 0.** Both are refused once the FMID has been accepted — which our install
-jobs do, in the same run as the APPLY. The replacement is the UCLIN job in each
-project's `doc/uninstall.md`, and it must delete the **element** entries, not
-just the SYSMOD: `DEL MOD(<mod>)` and `DEL LMOD(<mod>)` in CDS *and* ACDS. In
-SMP4 an element belongs to the FMID that installed it, and a SYSMOD carrying a
-different FMID does not replace an element it does not own. SMP skips it and
-prints one column of one report:
+```toml
+[distribution.smp]
+fmid   = "TUFS123"
+delete = ["TUFS120"]      # the level this one replaces
+```
+
+**No version component may ever exceed 9.** There is no room in a 7-character
+id for a second digit, so at patch 9 you cut the next minor and at minor 9 the
+next major — 1.2.10 cannot be expressed and must not be released. Service
+SYSMODs (`U…`) stay reserved and unused: mbt emits `++FUNCTION` only, there is
+no `make ptf`, so a patch is a new function level, not a PTF.
+
+Version numbers may skip in the id space and that is normal: ufsd went 1.2.0 →
+1.2.3 under the old per-minor rule, so `TUFS121` and `TUFS122` are simply never
+assigned. Do not "fix" a gap.
+
+**How DELETE works**, measured on mvsdev 2026-09-14 (HMASMP LVL 04.48, jobs
+JOB00291 / JOB00293 / JOB00296–00299):
+
+- SMP deletes the predecessor's LMODs from the target library
+  (`HMA2240 SUCCESSFULLY DELETED LMOD …`) and then copies the new ones in
+  (`HMA2380 COPY SUCCESSFUL … SYSMOD=<new>`). `MOD(x)` comes back carrying the
+  new `FMID` and `RMID` — **element ownership transfers**.
+- **Each zone is deleted by its own pass**: APPLY the CDS, ACCEPT the ACDS.
+  Skip the ACCEPT and the old id survives as `REC APP ACC RGN` in the ACDS.
+- A deleted id has no SMPSCDS backup entry, so the APPLY ends **RC 04** on
+  `HMA2461 … NOT FOUND ON SMPSCDS LIBRARY` *after* reporting `HMA2270`
+  success. mbt relaxes the ACCEPT gate to `COND=(4,LT,APPLY.HMASMP)` when
+  `delete` is set, and leaves it strict otherwise.
+- The predecessor is left as a tombstone — `TYPE = FUNCTION / DELBY = <new>` —
+  which `LIST` reports at **RC 00**, so the "RC 04 + empty list = free" rule
+  below reads it as occupied. That is correct: the id stays spent.
+
+This replaces the `UCLIN` upgrade step entirely. `doc/uninstall.md` keeps its
+UCLIN job for *removing* a product and for cleaning up a test install.
+
+### The element-ownership wall
+
+**SMP keys element ownership on `MOD(name)` in the CDS, not on the library the
+element lives in.** A SYSMOD that does not own `MOD(x)` cannot install it: the
+element summary prints
 
 ```
 ELEM   ELEMENT   ELEM
@@ -75,30 +109,24 @@ TYPE   NAME      STATUS
 MOD    FTPD      NOT SEL
 ```
 
-Everything else says success: RECEIVE/APPLY CHECK/APPLY/ACCEPT all RC 00,
-`HMA2270 … SUCCESSFULLY COMPLETED`, `STATUS = REC APP ACC` in both zones — and
-an empty target library. The message that separates a real install from that
-one is `HMA2380 COPY SUCCESSFUL - MOD=… - LMOD=… - LIBRARY=…`; if it is not in
-the job log, nothing was copied. Measured both ways on mvsdev 2026-09-13
-(ftpd 1.1.0-dev, jobs FTPDINS JOB00269 and JOB00281). **Verify every install by
-listing the members of the target library**, never by the condition codes.
+nothing is copied, and everything else says success — RECEIVE / APPLY CHECK /
+APPLY / ACCEPT all RC 00, `HMA2270 … SUCCESSFULLY COMPLETED`, `STATUS = REC APP
+ACC` in both zones, and an empty target library. Measured twice: ftpd 1.1.0-dev
+on mvsdev 2026-09-13, and again 2026-09-14 (JOB00291) where a *fresh, free*
+FMID installing into a dataset unrelated to any other install still lost to the
+owner of the module name.
 
-This bites any project moving to a new minor: ufsd 1.2→1.3 and httpd 4.0→4.1
-face the identical wall.
+The message that separates a real install from that one is
+`HMA2380 COPY SUCCESSFUL - MOD=… - LMOD=… - LIBRARY=…`. **Verify every install
+by listing the members of the target library**, never by the condition codes.
 
-**The FMID and the dataset qualifier move at different rates, and every patch
-release trips over it.** `@VRM@` is derived from the *full* version, so ftpd
-1.0.2 packages `FTPD.V1R0M2.*` while it still ships as `TFTP100`. The libraries
-therefore never collide with the predecessor's — only the FMID does, and SMP
-refuses to receive an id that is already `REC APP ACC`. So a patch install is
-**UCLIN to free the FMID, then the shipped alloc + inst jobs unchanged**, and
-the uninstall job's `DELETE` step must *not* be run: it names the previous
-release's datasets, which the new install does not touch. Say "V1R0M2 for
-1.0.2", never "V1R0M0 for 1.0.x" — that phrasing was wrong in ftpd's uninstall
-guide until 2026-09-05, and following it scratched the orphaned libraries while
-leaving the live installation standing, with SMP reporting accepted throughout.
-The same phrasing is still in ufsd's `project.toml` (`V1R2M0 at package time`);
-ufsd 1.2.2 in fact packages `UFSD.V1R2M2`.
+Two consequences:
+
+- Versioning the product datasets never bought a clean cut between releases —
+  the collision is on the module name in the inventory, not on the dataset.
+- **A test install needs throwaway module names as well as a throwaway id.**
+  A throwaway FMID alone measures this wall instead of whatever it meant to
+  measure.
 
 **`T` exists to stay out of IBM's namespace, and on MVS 3.8j that namespace is
 `E??nnnn`** — measured on both MVS/CE and TK5: `EBB1102` is MVS 3.8j itself
@@ -106,18 +134,21 @@ ufsd 1.2.2 in fact packages `UFSD.V1R2M2`.
 `EDE1102`, `EDM1102`, `EDS1102`, `EJE1103`, `EVT0108`, `ETV0108`. **Do not
 move our ids to `E…`** — that is precisely the namespace being avoided.
 
-| Project | FMID | Service | State |
+| Project | FMID | Deletes | State |
 |---------|------|---------|-------|
-| ufsd 1.2.x | `TUFS120` | `UUFS001…` | assigned in `project.toml` |
-| ftpd 1.0.x | `TFTP100` | `UFTP001…` | assigned in `project.toml` |
-| httpd 4.0.x | `THTP400` | `UHTP001…` | proposed |
-| mvsmf 0.1.x | `TZMF010` | `UZMF001…` | proposed |
-| rexx370 1.0.x | `TRXX100` | `URXX001…` | proposed |
-| nsf370 0.1.x | `TNSF010` | `UNSF001…` | proposed |
+| ufsd 1.2.3 | `TUFS123` | `TUFS120` | to assign (ufsd#75) |
+| ftpd 1.1.0 | `TFTP110` | `TFTP100` | in `project.toml`, unspent — add `delete` |
+| httpd 4.1.0 | `THTP410` | `THTP400` | in `project.toml`, unspent — add `delete` |
+| mvsmf 1.0.1 | `TZMF101` | — | proposed (first level; 1.0.0 shipped with no `[distribution]`, so `TZMF010` was never assigned) |
+| rexx370 1.0.0 | `TRXX100` | — | proposed (first level) |
+| nsf370 0.1.0 | `TNSF010` | — | proposed (first level) |
 
 **Burned, do not reuse:** `TUFS110` (ufsd 1.1.x — never released, but applied
-and accepted on a test system) and `TXPR100` (inline-delivery experiment,
-received and rejected on `mvsdev`).
+and accepted on a test system), `TUFS120` (ufsd 1.2.0–1.2.2, `REC APP ACC` on
+mvsdev), `TFTP100` (ftpd 1.0.x, released), `THTP400` (httpd 4.0.x, `REC APP
+ACC` on mvsdev), `TXPR100` (inline-delivery experiment, received and rejected
+on `mvsdev`) and `TTST001`–`TTST004` (the `++VER DELETE` measurement,
+2026-09-14).
 
 **Never `TMVS…`** — MVS/CE carries applied USERMODs called `TMVS804`,
 `TMVS816` and `TMVS817`, and TK5 does not carry them at all. That makes the
@@ -128,8 +159,11 @@ it on the other. The same holds for `TIST801`, `TJES801`, `TNIP800` and
 libc370 and lstring370 get no FMID at all: they are statically linked and do
 not exist on MVS.
 
-**A test install must use a throwaway id.** A half-applied FMID leaves the
-real one occupied.
+**Status of the tooling.** `[distribution.smp] delete` and the relaxed ACCEPT
+gate are **mvslovers/mbt#98**, open. The unversioned product dataset names
+(`UFSD.LINKLIB`, not `UFSD.V1R2M3.LINKLIB`) are **mvslovers/ufsd#75**, open.
+The policy above is decided; until those two merge, `main` still carries the
+old shape.
 
 ### Checking whether an id is free
 
@@ -143,7 +177,9 @@ real one occupied.
 The zone operand is **mandatory** (`CDS` = applied, `ACDS` = accepted); bare
 `LIST SYSMODS .` is SMP/E syntax and gets `HMA2033 SYNTAX ERROR`. **RC 04 with
 an empty list means the id is free**; a hit prints `TYPE`, `STATUS`
-(`REC`/`APP`/`ACC`) and the `FMID` it belongs to. Qualify it — `LIST CDS .`
+(`REC`/`APP`/`ACC`) and the `FMID` it belongs to. A hit that prints only
+`TYPE = FUNCTION` and `DELBY = <id>` is a deleted predecessor — it answers
+**RC 00**, and it is spent, not free. Qualify it — `LIST CDS .`
 dumps the entire inventory, 116 000 lines on MVS/CE.
 
 `SYS1.SMPPTS` can also be listed directly, because MCS entry names are the one
