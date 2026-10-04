@@ -607,8 +607,40 @@ project-root/
 ├── .github/workflows/  # build.yml (PR + push:main), release.yml (tags)
 ├── .mbt/               # build state + staged deps (gitignored)
 ├── build/ , dist/      # build outputs / release artifacts (gitignored)
-└── docs/               # documentation
+├── docs/               # documentation for USERS (manuals, guides)
+└── internals/          # documentation for MAINTAINERS (design, measurements)
 ```
+
+### Documentation: `docs/` is for users, `internals/` for maintainers
+
+Decided 2026-10-04. The directory name says who the text is for:
+
+| Directory | Reader | Holds |
+|---|---|---|
+| `docs/` | someone **using** the product | the manuals (`docs/books/`), installation and configuration guides, later man pages |
+| `internals/` | someone **working on** the product, sessions included | design notes, format analyses, measurements, release checklists, roadmaps |
+
+**Not `doc/` beside `docs/`.** One letter apart, a file filed under the
+wrong one goes unnoticed, and "see the docs" in prose cannot say which tree
+it means. A project still holding a `doc/` moves it to `internals/`.
+
+The test is the reader, not the polish: `releasing.md` is carefully kept and
+still internal; a configuration guide for a user is `docs/` even as a
+draft. When a piece of `internals/` turns out to be what a user needs (a
+format description, say), it moves into a manual rather than being linked
+from one.
+
+**Moving is one small PR of its own** per project, never folded into other
+work: `git mv`, then every reference found by `git grep -n 'docs/'` (and
+`'doc/'`) — CLAUDE.md, READMEs, `TODO.md`, code comments, workflow files —
+rewritten in the same PR. A `CHANGELOG.md` keeps its old paths; it records
+history.
+
+The manuals are set with the `mvslovers/bookmaster` template (a submodule at
+`docs/books/bookmaster`) and numbered `ML<area>-<serial>-<edition>`: area 01
+is the compiler and its library (ML01-0001 cc370 User's Guide, ML01-0002
+cc370 Command Reference, ML01-0003 libc370 Programmer's Guide, ML01-0004
+libc370 Library Reference).
 
 ---
 
