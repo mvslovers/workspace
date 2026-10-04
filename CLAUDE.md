@@ -55,7 +55,7 @@ The functions keep their C names; the external names lost the `@@`
 `>= 1.1.0, < 2` (every header `#error`s otherwise), and cc370 1.1.x needs libc370
 `>= 2.1.0` (packages). Who owns what (compiler helpers and prologue macros are
 cc370's), who needs which version, and the release checklists live in each repo:
-libc370 `doc/releasing.md`, cc370 `internals/releasing.md`. **Read the one for the
+libc370 `internals/releasing.md`, cc370 `internals/releasing.md`. **Read the one for the
 project you release before cutting a release.**
 
 ### Maintenance mode
