@@ -29,6 +29,7 @@ httprexx — REXX Server Pages (httpd server module)      needs: libc370, ufsd, 
 rexx370  — REXX interpreter, TSO/E V2 compatible        needs: lstring370
 lua370   — Lua 5.4 engine: LUA/LUAC + liblua370.a       needs: — (sysroot libc only)
 lstring370 — Reentrant length-prefixed strings          needs: — (sysroot libc only)
+crypto370 — SHA-256, Blowfish, base64 (static library)  needs: — (sysroot libc only)
 mbt      — MVS Build Tools (Python + Make)
 ```
 
@@ -40,13 +41,42 @@ prerequisite of a deployment, not a `[dependencies]` entry — do not add one.
 **lstring370** declares no dependency by design either: consumers inject
 `alloc`/`dealloc` through `struct lstr_alloc`, and the C runtime comes from the
 cc370 sysroot (`-lc`). Consumed by rexx370 only — which is a separate project
-from the unmaintained `brexx370` below, despite the name.
+from `brexx370` below, despite the name.
+
+**crypto370** is SHA-256, Blowfish and base64, moved out of libc370 for 2.0
+(libc370#244). Released as 1.0.0 on 2026-09-30; its headers are `sha256.h`,
+`blowfish.h` and `base64.h` (libc370 called the last one `clibb64.h`). httpd
+(all three) and mvsMF (base64) took it as a `[dependencies]` entry in their
+libc370 2.0 ports (httpd 4.2.0-dev; mvsMF in mvslovers/mvsmf#379, 2026-10-01).
+The functions keep their C names; the external names lost the `@@`
+(`B64ENC`, not `@@B64ENC`).
+
+**cc370 and libc370 versions go together.** libc370 2.1.x needs cc370
+`>= 1.1.0, < 2` (every header `#error`s otherwise), and cc370 1.1.x needs libc370
+`>= 2.1.0` (packages). Who owns what (compiler helpers and prologue macros are
+cc370's), who needs which version, and the release checklists live in each repo:
+libc370 `doc/releasing.md`, cc370 `docs/releasing.md`. **Read the one for the
+project you release before cutting a release.**
+
+### Maintenance mode
+
+```
+brexx370 — BREXX/370 REXX interpreter (JCC heritage)    needs: — (sysroot libc only)
+```
+
+**brexx370 gets no new features.** The work is limited to three things:
+moving the build from JCC to mbt v2 / cc370 + libc370, one cleanup pass, and
+the TSO integration (`ZMG0001`). New REXX function belongs in rexx370. A
+brexx370 change outside that scope is a question for the maintainer, not a
+judgement call.
 
 | Project | Build | Status |
 |---------|-------|--------|
 | cc370, libc370 | make | host toolchain |
 | ufsd, ftpd, httpd, mvsmf, lstring370, httplua, httprexx, lua370 | mbt v2 | migrated, building, CI green |
+| crypto370 | mbt v2 | new 2026-09-30; v1.0.0 released, CI green; httpd and mvsMF depend on it since their libc370 2.0 ports |
 | rexx370 | mbt v2 | building; no CI workflow yet |
+| brexx370 | mbt v2 (migration branch) | maintenance mode; 59/65 REXX tests pass on MVS/CE, batch only |
 | mbt | — | active |
 
 ### SMP4 FMIDs — one per release, spent exactly once
@@ -158,20 +188,24 @@ move our ids to `E…`** — that is precisely the namespace being avoided.
 
 | Project | FMID | Deletes | State |
 |---------|------|---------|-------|
-| ufsd 1.3.1 | `TUFS131` | `TUFS130` | assigned; 1.3.0 released 2026-09-14 under `TUFS130` |
-| ftpd 1.1.1 | `TFTP111` | `TFTP110` | assigned; 1.1.0 released 2026-09-14 under `TFTP110`. Free on mvsdev (`FMIDCHK JOB00332`) and drnmig3a (`FTPDCHK JOB00045`) |
-| httpd 4.1.0 | `THTP410` | `THTP400` | assigned, unspent. Free on mvsdev (`FMIDCHK JOB00288`) and drnmig3a (`FMIDCHK JOB00034`) |
-| mvsmf 1.0.1 | `TZMF101` | — | proposed (first level; 1.0.0 shipped with no `[distribution]`, so `TZMF010` was never assigned) |
+| ufsd 1.4.0 | `TUFS140` | `TUFS130` | assigned, not yet checked on any stand; 1.3.0 released 2026-09-14 under `TUFS130`. `TUFS131` (1.3.1, never cut -- the libc370 2.0 port made the next release 1.4.0) is unspent and unassigned |
+| ftpd 1.2.0 | `TFTP120` | `TFTP110` | assigned 2026-10-01 with the libc370 2.0 port (ftpd#157), now on `main`; free on the maintainer's word (only this project assigns `TFTP` ids), no `LIST` run on any stand; 1.1.0 released 2026-09-14 under `TFTP110`. `TFTP111` (1.1.1, never cut -- the libc370 2.0 port made the next release 1.2.0) is unspent and unassigned; it was free on mvsdev (`FMIDCHK JOB00332`) and drnmig3a (`FTPDCHK JOB00045`) |
+| httpd 4.2.0 | `THTP420` | `THTP410` | assigned, not yet checked on any stand; 4.1.0 released 2026-09-14 under `THTP410`. `THTP411` (4.1.1, never cut -- the libc370 2.0 port, httpd#272, made the next release 4.2.0) is unspent and unassigned; it was free on mvsdev (`FMIDCHK JOB00343`) |
+| mvsmf 1.2.0 | `TZMF120` | `TZMF110` | assigned 2026-10-01 with the libc370 2.0 port (mvslovers/mvsmf#379), now on `main`; not yet checked on any stand. 1.1.0 released 2026-09-14 under `TZMF110`, the first level (free on mvsdev, `JOB00360`, CDS and ACDS). `TZMF111` (1.1.1, never cut -- the libc370 2.0 port made the next release 1.2.0) is unspent and unassigned. 1.0.0 and 1.0.1 shipped with no `[distribution]`, so nothing below `TZMF110` was ever assigned |
 | rexx370 1.0.0 | `TRXX100` | — | proposed (first level) |
+| brexx370 (BREXX/370) 3.0.0 | `TBRX300` | — | proposed (first level). The prefix `TBRX` is BREXX/370's; the digits follow the release version, which is still open (`PARSE VERSION` shows `3.0.0-dev`, JCC builds showed `V2R5M3`). Not yet checked on any stand |
 | nsf370 0.1.0 | `TNSF010` | — | proposed (first level) |
 
 **Burned, do not reuse:** `TUFS110` (ufsd 1.1.x — never released, but applied
 and accepted on a test system), `TUFS120` (ufsd 1.2.0–1.2.2, `REC APP ACC` on
 mvsdev), `TUFS130` (ufsd 1.3.0, released 2026-09-14), `TFTP100` (ftpd 1.0.x,
 released), `TFTP110` (ftpd 1.1.0, released 2026-09-14), `THTP400` (httpd 4.0.x,
-`REC APP ACC` on mvsdev), `TXPR100` (inline-delivery experiment, received and rejected
-on `mvsdev`) and `TTST001`–`TTST007` (the `++VER DELETE` measurement and
-the `REQ` semantics probe, both 2026-09-14).
+`REC APP ACC` on mvsdev), `THTP410` (httpd 4.1.0, released 2026-09-14),
+`TZMF110` (mvsMF 1.1.0, released 2026-09-14), `TXPR100` (inline-delivery experiment, received and rejected
+on `mvsdev`), `TTST001`–`TTST007` (the `++VER DELETE` measurement and
+the `REQ` semantics probe, both 2026-09-14) and `TTST008`–`TTST010` (the alias
+measurement on mvsdev, 2026-09-27, mvslovers/mbt#112; afterwards removed from
+both zones by UCLIN, `ALTCLN JOB00520` — spent all the same).
 
 **Never `TMVS…`** — MVS/CE carries applied USERMODs called `TMVS804`,
 `TMVS816` and `TMVS817`, and TK5 does not carry them at all. That makes the
@@ -179,15 +213,25 @@ collision **distribution-specific**: you would find it on one system and miss
 it on the other. The same holds for `TIST801`, `TJES801`, `TNIP800` and
 `TTSO801` — all USERMODs on MVS/CE, absent on TK5.
 
-libc370 and lstring370 get no FMID at all: they are statically linked and do
+**Usermods to IBM modules: prefix `ZMG`, not `T`.** When a project patches IBM
+elements (for example rexx370's TSO integration in IKJEFT01 and EXEC), it ships a
+`++USERMOD` with `++VER … FMID(<the owning IBM FMID>)`, never a FUNCTION of its
+own. `ZP…` is Greg Price's series, and `A`/`U`/`E`/`F`/`H`/`J` are IBM's.
+`ZMG0001` is reserved for the BREXX TSO integration. `ZMG0002` is rexx370's TSO
+integration: applied on MVSCE-LAB and not yet published (rexx370
+`tso/usermod/`). Ship object decks only: SMP APPLY links them against the
+*installed* load module (KB `MVS-SMP-0004`). RESTORE clears the inventory but
+leaves CSECTs the usermod added in the load module (KB `MVS-SMP-0005`).
+
+libc370, lstring370 and crypto370 get no FMID at all: they are statically linked and do
 not exist on MVS.
 
 **Status of the tooling.** Both halves have landed: `[distribution.smp] delete`
 and the relaxed ACCEPT gate in **mvslovers/mbt#98**, and the unversioned
-product dataset names in **mvslovers/ufsd#75** (ufsd is on 1.3.0-dev, FMID
-`TUFS130`). ufsd is the worked example — copy its `[distribution]` block.
-Still to adopt: **mvslovers/ftpd#143** and **mvslovers/httpd#269**; httpd
-carries the dataset half separately in its #259/#267.
+product dataset names in **mvslovers/ufsd#75**. ufsd is the worked example —
+copy its `[distribution]` block. ftpd adopted both in **mvslovers/ftpd#143**
+and httpd in **mvslovers/httpd#269**, the dataset half separately in its
+#259/#267.
 
 **A DELETE never touches the predecessor's data set, and this is the trap of
 the rename.** SMP records the *ddname* an element was installed through and
@@ -251,6 +295,21 @@ ufsd's `docs/uninstall.md` is the worked example.
 `RECV` ends RC 08 on an already-received SYSMOD, `APPLYCHK` is bypassed by its
 COND, and `APPLY`'s `COND=(0,NE,APPLYCHK.HMASMP)` names a bypassed step, which
 JCL ignores. That is the recovery path, not an exotic one.
+
+**Aliases travel as `TALIAS`, or not at all.** A load module's aliases
+(`aliases = [...]` on `[[module]]`, mbt#113) reach the LKLIB as true aliases,
+but a `++MOD` without `TALIAS(…)` makes SMP copy the main member only: target
+library and DLIB end up without a single alias, and every step reports CC 0000
+(`TTST008`, JOB00509). With `TALIAS` on the `++MOD` — the JCLIN stays COPY —
+SMP installs true aliases into both libraries, re-binds nothing (`AC=1` and
+`norent` survive) and records `TALIAS = …` on the MOD entry in both zones
+(`TTST009`, JOB00515/00516). An upgrade with `DELETE` moves them onto the new
+module; all three names ran the new code (`TTST010`, JOB00518/00519). mbt emits
+`TALIAS` since **mvslovers/mbt#114**. **Not measured: a release that drops an
+alias** — APPLY deletes only the LMOD in the target library (ACCEPT deletes
+module and aliases in the DLIB), so a dropped alias most likely survives there,
+pointing at the deleted module. **mvslovers/mbt#115**; read it before removing
+an alias from a shipped product.
 
 **Name the stands, with job numbers, every time an id is reported free.** One
 stand is not enough — the `TMVS…`/`TIST801` collisions below are applied on
@@ -331,7 +390,7 @@ actually installed.
 
 No further work. Superseded: **c2asm370** → cc370, **crent370** → libc370.
 Also unmaintained: ufs370, ufs370-tools, ftp370, mqtt370 (+broker,
-+cli), zlib370, brexx370.
++cli), zlib370.
 
 ---
 
@@ -660,11 +719,11 @@ attach to a body whose length was *not* known in advance — display modules,
 `?target=MOD` is the way to read the route table, and always was — `display_route()`
 loops the whole array, one full field table plus hex per route.
 
-Write curl flags out inline, never via a shell variable. zsh does not
-word-split unquoted `$VAR`, so `A="-u u:p"; curl $A …` sends the userid with a
-leading space and every request 401s while looking like a server fault. When an
-authenticated request unexpectedly 401s, decode what was actually sent
-(`curl -v … | grep Authorization`) before suspecting the server or a deploy.
+Write curl flags out inline, never via a shell variable — see **Agent
+Discipline** for the general rule and what it has cost. The httpd-specific
+consequence: when an authenticated request unexpectedly 401s, decode what was
+actually sent (`curl -v … | grep Authorization`) before suspecting the server or
+a deploy.
 
 ---
 
@@ -680,6 +739,18 @@ authenticated request unexpectedly 401s, decode what was actually sent
   has one.** Strike what landed, drop what the change made obsolete, and re-rank
   when the priorities moved. A `TODO.md` that lags behind `main` is worse than
   none at all, because it is read as current.
+- **`CHANGELOG.md` and the GitHub release page are written for someone who
+  has never heard of this ecosystem.** No consumer project names (ufsd, ftpd,
+  httpd, mvsMF, brexx370, …) and no job numbers or system names from the
+  maintainer's private systems (`JOBnnnnn`, mvsdev, MVSCE-LAB, …): describe
+  the effect in the project's own terms ("a server thread", "measured on MVS:
+  18/18, previously 11"). Those references belong in issues, PRs and commits.
+- **Every release reworks its release page before it is announced.** The
+  workflow pastes the CHANGELOG section; turn it into a page for a new user:
+  a lead paragraph (what the release is, whether it is a drop-in, the
+  toolchain range), "Read this first" for what a caller notices, a
+  before/now table of the fixes, how to install, then the full changelog.
+  Check the result for the two rules above.
 
 ---
 
@@ -701,6 +772,57 @@ artifact.
 `CLAUDE.md` files; anything that reduces memory use on MVS.
 
 ## Agent Discipline
+
+**The measurement survives; the sentence beside it does not.** Twenty-seven
+instances across three days of one shape: a figure checked exhaustively, and the
+one-line claim written next to it checked not at all — "it is in the PR body"
+(it was not), "absent from our deck" (the tool had printed a delete *and* an
+insert), "no new machinery is needed" (two of three kinds, not three). **Not one
+was caught by its author re-reading it**, including the two authors who knew the
+shape by name and had written it down that same day. So the defence is not
+vigilance and "check your claims" adds nothing.
+
+What works is structural: **a number may be published by whoever measured it; the
+sentence beside it is read by someone who did not produce the number.** Where two
+sessions are working the same problem, that is what the division is for. Where
+there is only one, the substitute is to re-derive the claim from the artefact
+rather than from memory of it — open the file, grep the source, run the filter —
+because the claim and the measurement fail independently.
+
+**And cross-reading cannot catch a frame both readers are inside, so re-read the
+deliverable before refining a rule meant to satisfy it.** Two sessions spent six
+hours checking the definition of a clause that the issue excludes in its own
+first bullet — each auditing the other's arithmetic, which is precisely the
+activity that feels like checking. Every earlier instance was caught by the other
+party; this one was not, and could not be.
+
+Two corollaries met repeatedly: **a difference between two tools is not a cause
+until a filter replaces the subtraction**, and **two statistics of one dataset
+pointing opposite ways is not a contradiction** — it usually says the aggregate
+is carried by a few large members. Write both down.
+
+**The shell is an instrument too, and it fails by answering.** Write flags out
+inline, never through a shell variable: **zsh does not word-split an unquoted
+`$VAR`**, so `M="-I a -I b"; tool $M …` hands the program *one* argument and the
+program usually carries on. Met four times on 2026-09-17 across two sessions —
+`curl $A` sending the userid with a leading space and 401ing like a server fault;
+`as370 $MACFLAGS` receiving one giant `-I`, finding no macro at all, **exiting 0**
+and writing a deck whose section lengths were wrong by −6 and −96. Those numbers
+were a keystroke from being reported.
+
+**The same command works in a script and fails when pasted**, because `#!/bin/sh`
+*does* split — which is what makes it confusing rather than obvious: the gate's
+own worker was correct and the line typed beside it was not.
+
+A wrapped command lies the same way. `ls` aliased to a long-format lister turned
+`ls "$SRC" | sed …` into a module list of 5,528 *listing lines*, and `xargs -n 1`
+then ran 38,696 times on their fields. **Confirm a count against a known answer
+before building on it**, and prefer `find`, `git ls-files` or a glob to `ls` in a
+pipeline.
+
+The rule behind all four: **these do not crash, they answer.** Exit 0 and a
+plausible number is the whole failure mode, so the defence is a control you
+already know the value of — not care.
 
 **Verification before fix.** For any bug fix: write a test that reliably
 reproduces the failure first. Fix the code. Test must pass. "Feels fixed"
