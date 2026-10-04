@@ -55,7 +55,7 @@ The functions keep their C names; the external names lost the `@@`
 `>= 1.1.0, < 2` (every header `#error`s otherwise), and cc370 1.1.x needs libc370
 `>= 2.1.0` (packages). Who owns what (compiler helpers and prologue macros are
 cc370's), who needs which version, and the release checklists live in each repo:
-libc370 `doc/releasing.md`, cc370 `docs/releasing.md`. **Read the one for the
+libc370 `doc/releasing.md`, cc370 `internals/releasing.md`. **Read the one for the
 project you release before cutting a release.**
 
 ### Maintenance mode
@@ -130,7 +130,7 @@ JOB00291 / JOB00293 / JOB00296–00299):
   which `LIST` reports at **RC 00**, so the "RC 04 + empty list = free" rule
   below reads it as occupied. That is correct: the id stays spent.
 
-This replaces the `UCLIN` upgrade step entirely. `doc/uninstall.md` keeps its
+This replaces the `UCLIN` upgrade step entirely. ufsd's `docs/uninstall.md` keeps its
 UCLIN job for *removing* a product and for cleaning up a test install.
 
 ### The element-ownership wall
