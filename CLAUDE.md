@@ -74,7 +74,7 @@ judgement call.
 |---------|-------|--------|
 | cc370, libc370 | make | host toolchain |
 | ufsd, ftpd, httpd, mvsmf, lstring370, httplua, httprexx, lua370 | mbt v2 | migrated, building, CI green |
-| crypto370 | mbt v2 | new 2026-09-30; v1.0.0 released, CI green; httpd and mvsMF depend on it since their libc370 2.0 ports |
+| crypto370 | mbt 3 (pilot) | new 2026-09-30; v1.0.0 released; first project on mbt 3 (mbt.toml, no submodule, crypto370#6, 2026-10-06), CI green; httpd and mvsMF depend on it since their libc370 2.0 ports |
 | rexx370 | mbt v2 | building; no CI workflow yet |
 | brexx370 | mbt v2 (migration branch) | maintenance mode; 59/65 REXX tests pass on MVS/CE, batch only |
 | mbt | — | active |
