@@ -645,10 +645,33 @@ rewritten in the same PR. A `CHANGELOG.md` keeps its old paths; it records
 history.
 
 The manuals are set with the `mvslovers/bookmaster` template (a submodule at
-`docs/books/bookmaster`) and numbered `ML<area>-<serial>-<edition>`: area 01
-is the compiler and its library (ML01-0001 cc370 User's Guide, ML01-0002
-cc370 Command Reference, ML01-0003 libc370 Programmer's Guide, ML01-0004
-libc370 Library Reference).
+`docs/books/bookmaster`) and numbered `ML<area>-<serial>-<edition>`.
+
+**One area per product, assigned up front** (decided 2026-10-07), so a
+number never depends on the order in which books get written. Within an
+area, serial 0001 is the guide and 0002 the reference; further volumes count
+on. The edition is the last digit: `-0` the Draft, `-1` the first edition.
+A product not in the table gets an area only when its first book starts --
+add the row here before the first commit.
+
+| Area | Product | Books |
+|---|---|---|
+| ML01 | cc370 + libc370 (released as a pair) | 0001 cc370 User's Guide, 0002 cc370 Command Reference, 0003 libc370 Programmer's Guide, 0004 libc370 Library Reference -- on `main`, Draft |
+| ML02 | mbt (v3 only) | 0001 guide, 0002 reference -- planned |
+| ML03 | brexx370 | 0001 guide, 0002 reference -- planned, next |
+| ML04 | rexx370 | planned |
+| ML05 | ufsd | planned |
+| ML06 | ftpd | planned |
+| ML07 | httpd, with its modules | 0001/0002 httpd; httprexx and httplua from 0003 -- planned |
+| ML08 | mvsMF | planned |
+
+How the books live, build and ship (agreed 2026-10-07 by the cc370 and
+libc370 sessions): on `main` beside the code, updated in the PR that changes
+the documented behaviour; built by CI on every PR (typst pinned by version
+and sha256); attached to every release with their `SHA256SUMS` lines; a
+books step in each project's `internals/releasing.md`. The repo's session
+owns its books, and a second session cross-reads every change. cc370 #893
+and libc370 #477 are the worked examples.
 
 ---
 
