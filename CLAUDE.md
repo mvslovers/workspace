@@ -88,10 +88,17 @@ MVS 3.8j, not SMP/E). A `[distribution]` table in `project.toml` makes
 `make package` build the install package; **ufsd is the reference
 implementation** — copy its block rather than inventing one.
 
-**The id is the release.** `T` + three product letters + the three version
-digits: ufsd 1.3.0 is `TUFS130`, httpd 4.1.0 is `THTP410`. One id per
-release, never re-spent, and each release's SYSMOD **deletes its
-predecessor**:
+**The id is the minor release** (decided for mbt 3, design §6.4). `T` + three
+product letters + major + minor + `0`: ufsd 1.3.0 is `TUFS130`, httpd 4.1.0 is
+`THTP410`. A patch is meant to become a **PTF** against its minor's FMID once
+mbt builds PTFs. Until then a patch release needs an explicit `fmid` of its
+own (1.4.1 as `TUFS141`), and the next minor an explicit `delete` naming that
+id: deriving `TUFS140` there would leave `TUFS141` owning the modules, and SMP
+installs nothing at RC 0 (the wall below). mbt 3 refuses to package in both
+cases instead of guessing. Each id is spent once, never re-used, and each
+release's SYSMOD **deletes its predecessor**. mbt 3 derives both from
+`[smp] prefix` and the version; an explicit `fmid`/`delete` wins. The mbt 2
+form, still in every `project.toml`:
 
 ```toml
 [distribution.smp]
@@ -103,17 +110,18 @@ delete = ["TUFS120"]      # the level this one replaces
 id for a second digit, so at patch 9 you cut the next minor and at minor 9 the
 next major — 1.2.10 cannot be expressed and must not be released.
 
-**`make release` does not move the id.** It bumps `VERSION` and the project
-version and stops, so the tree comes out of a release carrying the id that was
-just spent. Bumping `fmid` and `delete` is part of *preparing* the next
-release; do it in the same commit that follows the bump, before anything is
-built from that tree. Service
-SYSMODs (`U…`) stay reserved and unused: mbt emits `++FUNCTION` only, there is
-no `make ptf`, so a patch is a new function level, not a PTF.
+**Under mbt 2, `make release` does not move the id.** It bumps `VERSION` and
+the project version and stops, so the tree comes out of a release carrying the
+id that was just spent. Bumping `fmid` and `delete` is part of *preparing* the
+next release; do it in the same commit that follows the bump, before anything
+is built from that tree. Under mbt 3 the derived id follows the version by
+itself; only an explicit `fmid`/`delete` needs that care. Service SYSMODs
+(`U…`) stay reserved and unused until mbt builds PTFs: today it emits
+`++FUNCTION` only.
 
 Version numbers may skip in the id space and that is normal: ufsd 1.2.0, 1.2.1
-and 1.2.2 all shipped under `TUFS120` when the rule was one id per *minor*, so
-`TUFS121` and `TUFS122` are never assigned. Do not "fix" a gap.
+and 1.2.2 all shipped under `TUFS120`, one id per *minor*, so `TUFS121` and
+`TUFS122` are never assigned. Do not "fix" a gap.
 
 **How DELETE works**, measured on mvsdev 2026-09-14 (HMASMP LVL 04.48, jobs
 JOB00291 / JOB00293 / JOB00296–00299):
