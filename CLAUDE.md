@@ -667,7 +667,7 @@ add the row before the first commit. The registry is the README of
 |---|---|---|
 | ML01 | cc370 + libc370 (released as a pair) | 0001 cc370 User's Guide, 0002 cc370 Command Reference, 0003 libc370 Programmer's Guide, 0004 libc370 Library Reference -- on `main`, Draft |
 | ML02 | mbt (v3 only) | 0001 guide, 0002 reference -- planned |
-| ML03 | brexx370 | 0001 guide, 0002 reference -- planned, next |
+| ML03 | brexx370 | 0001 User's Guide, 0002 Reference, 0003 Library and Samples (RXLIB, samples) -- in preparation |
 | ML04 | rexx370 | planned |
 | ML05 | ufsd | planned |
 | ML06 | ftpd | planned |
