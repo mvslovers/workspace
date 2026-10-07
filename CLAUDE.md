@@ -652,7 +652,8 @@ number never depends on the order in which books get written. Within an
 area, serial 0001 is the guide and 0002 the reference; further volumes count
 on. The edition is the last digit: `-0` the Draft, `-1` the first edition.
 A product not in the table gets an area only when its first book starts --
-add the row here before the first commit.
+add the row before the first commit. The registry is the README of
+`mvslovers/bookmaster` ("Document numbers"); the table below mirrors it.
 
 | Area | Product | Books |
 |---|---|---|
