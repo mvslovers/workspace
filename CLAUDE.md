@@ -529,7 +529,13 @@ Now that products install through SMP, **`<PROD>.LINKLIB` belongs to SMP and
 nothing else may write to it.** A `make deploy` into that library leaves the
 inventory describing a level that is not on disk, and SMP cannot notice.
 
-So each project's `project.toml` names its own development library:
+So each project deploys into a development library of its own,
+`<PROD>.DEV.LINKLIB`. **Under mbt 3 that is the default**: `mbt.toml` writes
+`[deploy] target` only for another library, or when the project name is
+longer than a qualifier's 8 characters. In that case mbt refuses to guess a
+shortened name (`is not a valid dataset name … -- set [deploy] target`), since
+a started task's STEPLIB has to name the library. An mbt 2 `project.toml`
+still names it, because mbt 2's default was `{HLQ}.{PROJECT}.{VRM}.LINKLIB`:
 
 ```toml
 [deploy]
