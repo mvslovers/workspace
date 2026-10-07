@@ -674,6 +674,15 @@ books step in each project's `internals/releasing.md`. The repo's session
 owns its books, and a second session cross-reads every change. cc370 #893
 and libc370 #477 are the worked examples.
 
+**A product with both books and a Read the Docs site keeps the two in step**
+(decided 2026-10-07; brexx370 has a Sphinx site today, libc370 will get
+one). A change to documented behaviour updates the book *and* the Sphinx
+source in the same PR, and the cross-reader checks both against each other
+as well as against the code. This is double maintenance and a drift risk
+by construction, so it stands only until one source can feed both; the
+candidate is Typst's HTML export from the book sources (experimental in
+typst 0.15), published to Read the Docs through a custom build.
+
 ---
 
 ## Live Debugging via HTTPD (httpd + module projects only)
