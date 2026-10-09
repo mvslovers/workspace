@@ -81,6 +81,40 @@ judgement call.
 | brexx370 | mbt v2 (migration branch) | maintenance mode; 59/65 REXX tests pass on MVS/CE, batch only |
 | mbt | — | active |
 
+### Product names
+
+Decided 2026-10-09. A product has a **name** for people and a **repo name**
+for machines, and each is used where it belongs:
+
+| Product name | Repo | Notes |
+|---|---|---|
+| CC/370 | cc370 | the toolchain; its commands stay `cc370`, `as370`, `ld370`, `ar370`, `file370`, ... |
+| LIBC/370 | libc370 | |
+| MBT | mbt | |
+| BREXX/370 | brexx370 | |
+| LUA/370 | lua370 | |
+| UFSD | ufsd | |
+| FTPD | ftpd | |
+| HTTPD | httpd | HTTPLUA and HTTPREXX are its modules (httplua, httprexx) |
+| mvsMF | mvsmf | |
+| (open) | rexx370 | to be named before its first release; **not** REXX/370, which is an IBM product name (as C/370 was IBM's compiler) |
+| lstring370, crypto370 | the same | libraries with no presence of their own keep the repo name |
+
+- **The product name** goes into prose, titles, book titles, web pages, README
+  headings and release pages.
+- **The repo name** stays in everything a machine reads: commands, paths,
+  file names, data set qualifiers, `project.toml`, URLs, GitHub references.
+  "CC/370 consists of cc370, as370, ld370 ..." is the distinction the rule
+  exists for.
+- **First mention per document: both**, as "CC/370 (cc370)", so a search for
+  the repo name finds the page.
+- A `CHANGELOG.md` keeps the names it was written with; it records history.
+
+Moving to the names happens per repo, by the repo's session: the books and
+web pages with their next change, README and release texts in a small PR of
+their own. A project `CLAUDE.md` changes only where it quotes a name to the
+outside.
+
 ### SMP4 FMIDs — one per release, spent exactly once
 
 Products are installed through **SMP Release 4** (the SMP that ships with
@@ -665,13 +699,13 @@ add the row before the first commit. The registry is the README of
 
 | Area | Product | Books |
 |---|---|---|
-| ML01 | cc370 + libc370 (released as a pair) | 0001 cc370 User's Guide, 0002 cc370 Command Reference, 0003 libc370 Programmer's Guide, 0004 libc370 Library Reference -- on `main`, Draft |
-| ML02 | mbt (v3 only) | 0001 guide, 0002 reference -- planned |
-| ML03 | brexx370 | 0001 User's Guide, 0002 Reference, 0003 Library and Samples (RXLIB, samples) -- in preparation |
+| ML01 | CC/370 + LIBC/370 (released as a pair) | 0001 CC/370 User's Guide, 0002 CC/370 Command Reference, 0003 LIBC/370 Programmer's Guide, 0004 LIBC/370 Library Reference -- on `main`, Draft |
+| ML02 | MBT (v3 only) | 0001 guide, 0002 reference -- planned |
+| ML03 | BREXX/370 | 0001 User's Guide, 0002 Reference, 0003 Library and Samples (RXLIB, samples) -- in preparation |
 | ML04 | rexx370 | planned |
-| ML05 | ufsd | planned |
-| ML06 | ftpd | planned |
-| ML07 | httpd, with its modules | 0001/0002 httpd; httprexx and httplua from 0003 -- planned |
+| ML05 | UFSD | planned |
+| ML06 | FTPD | planned |
+| ML07 | HTTPD, with its modules | 0001/0002 HTTPD; HTTPREXX and HTTPLUA from 0003 -- planned |
 | ML08 | mvsMF | planned |
 
 How the books live, build and ship (agreed 2026-10-07 by the cc370 and
