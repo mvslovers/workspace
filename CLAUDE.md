@@ -700,7 +700,7 @@ add the row before the first commit. The registry is the README of
 | Area | Product | Books |
 |---|---|---|
 | ML01 | CC/370 + LIBC/370 (released as a pair) | 0001 CC/370 User's Guide, 0002 CC/370 Command Reference, 0003 LIBC/370 Programmer's Guide, 0004 LIBC/370 Library Reference -- on `main`, Draft |
-| ML02 | MBT (v3 only) | 0001 guide, 0002 reference -- planned |
+| ML02 | MBT (v3 only) | 0001 User's Guide, 0002 Reference -- in preparation on mbt `docs/books`, readable as it grows on mvslovers.readthedocs.io/projects/mbt |
 | ML03 | BREXX/370 | 0001 User's Guide, 0002 Reference, 0003 Library and Samples (RXLIB, samples) -- in preparation |
 | ML04 | rexx370 | planned |
 | ML05 | UFSD | planned |
