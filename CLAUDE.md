@@ -65,7 +65,8 @@ brexx370 — BREXX/370 REXX interpreter (JCC heritage)    needs: — (sysroot li
 ```
 
 **brexx370 gets no new features.** The work is limited to three things:
-moving the build from JCC to mbt v2 / cc370 + libc370, one cleanup pass, and
+moving the build from JCC to mbt / cc370 + libc370 (on mbt 3 since
+brexx370#421), one cleanup pass, and
 the TSO integration (`ZMG0001`). New REXX function belongs in rexx370. A
 brexx370 change outside that scope is a question for the maintainer, not a
 judgement call.
@@ -78,7 +79,7 @@ judgement call.
 | lua370 | mbt 3 | on mbt 3 since 2026-10-07 (lua370#23; mbt.toml, no submodule), 41 of 42 outputs byte-identical to mbt 2 v2.2.0; ported to libc370 2.x in lua370#22, now 1.2.0-dev; CI green on main |
 | crypto370 | mbt 3 (pilot) | new 2026-09-30; v1.0.0 released; first project on mbt 3 (mbt.toml, no submodule, crypto370#6, 2026-10-06), CI green; httpd and mvsMF depend on it since their libc370 2.0 ports |
 | rexx370 | mbt v2 | building; no CI workflow yet |
-| brexx370 | mbt v2 (migration branch) | maintenance mode; 59/65 REXX tests pass on MVS/CE, batch only |
+| brexx370 | mbt 3 | on mbt 3 since 2026-10-11 (brexx370#421; mbt.toml, no submodule, `legacy/` gone), 164 of 164 outputs byte-identical to mbt 2; maintenance mode; REXX suite 183/183 on MVS/CE (batch and TSO steps) |
 | mbt | — | active |
 
 ### Product names
@@ -720,8 +721,10 @@ owns its books, and a second session cross-reads every change. cc370 #893
 and libc370 #477 are the worked examples.
 
 **A product with both books and a Read the Docs site keeps the two in step**
-(decided 2026-10-07; brexx370 has a Sphinx site today, libc370 will get
-one). A change to documented behaviour updates the book *and* the Sphinx
+(decided 2026-10-07; libc370 will get one). brexx370 no longer needs
+the rule: its Sphinx site is gone (brexx370#417) and Read the Docs builds
+from the books (brexx370#396), the single-source route named below.
+A change to documented behaviour updates the book *and* the Sphinx
 source in the same PR, and the cross-reader checks both against each other
 as well as against the code. This is double maintenance and a drift risk
 by construction, so it stands only until one source can feed both; the
