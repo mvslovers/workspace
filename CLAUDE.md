@@ -252,10 +252,13 @@ measurement on mvsdev, 2026-09-27, mvslovers/mbt#112; afterwards removed from
 both zones by UCLIN, `ALTCLN JOB00520` — spent all the same).
 
 **Never `TMVS…`** — MVS/CE carries applied USERMODs called `TMVS804`,
-`TMVS816` and `TMVS817`, and TK5 does not carry them at all. That makes the
-collision **distribution-specific**: you would find it on one system and miss
-it on the other. The same holds for `TIST801`, `TJES801`, `TNIP800` and
-`TTSO801` — all USERMODs on MVS/CE, absent on TK5.
+`TMVS816` and `TMVS817`; the same holds for `TIST801`, `TJES801`, `TNIP800`
+and `TTSO801`. Four of the seven are applied on TK5 as well (`TMVS816`,
+`TMVS817`, `TJES801`, `TNIP800`); `TMVS804`, `TIST801` and `TTSO801` are on
+MVS/CE only. Those three make the collision **distribution-specific**: you
+would find it on one system and miss it on the other. (SMP CDS of MVSCE-LAB and
+MVSTK5-BLD, MVSHIST extractions 2026-09-22/23. Corrected 2026-10-11: this
+paragraph used to say TK5 carries none of the seven.)
 
 **Usermods to IBM modules: prefix `ZMG`, not `T`.** When a project patches IBM
 elements (for example rexx370's TSO integration in IKJEFT01 and EXEC), it ships a
@@ -356,14 +359,14 @@ pointing at the deleted module. **mvslovers/mbt#115**; read it before removing
 an alias from a shipped product.
 
 **Name the stands, with job numbers, every time an id is reported free.** One
-stand is not enough — the `TMVS…`/`TIST801` collisions below are applied on
-MVS/CE and absent on TK5, so a single check finds them on one system and misses
-them on the other. And coverage that is inferred from a neighbouring row goes
-wrong in both directions: a row that silently covers one stand where the row
-above covered two reads as equally thorough (ftpd, 2026-09-14), and a stale
-"one stand only" note understates coverage and holds back a release that was
-ready (httpd, same day). Neither was written untruthfully; both are invisible
-without job numbers.
+stand is not enough — the `TMVS804`/`TIST801`/`TTSO801` collisions above are
+applied on MVS/CE and absent on TK5, so a single check finds them on one system
+and misses them on the other. And coverage that is inferred from a neighbouring
+row goes wrong in both directions: a row that silently covers one stand where
+the row above covered two reads as equally thorough (ftpd, 2026-09-14), and a
+stale "one stand only" note understates coverage and holds back a release that
+was ready (httpd, same day). Neither was written untruthfully; both are
+invisible without job numbers.
 
 ### `REQ` is an AND, so it cannot express a version floor
 
