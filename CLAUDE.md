@@ -908,6 +908,43 @@ a deploy.
 merge`; `gh issue/pr create/merge`; `make deploy` and anything else that
 writes to MVS.
 
+**Except in a throwaway MVS/CE container of your own** (decided
+2026-10-18). A session that started its own container with `mvsce-target
+up` (mvslovers/mvs-docker, `mvsce-builder/mvsce-target`) may write to MVS
+*inside that container* without asking: deploy, submit, allocate and
+delete, edit PROCLIB and PARMLIB, APF work, P/S of its STCs, abends on
+purpose. The container is discarded with `mvsce-target down`, and
+nothing survives it. The exception ends at the container's edge:
+
+- **Only your own container.** One started by another session, or one
+  not started with `mvsce-target`, is not yours; ask its owner.
+- **Never a real stand.** dev1, m38b, m38l, m38r, m38x and mvsdev's own
+  MVS keep the confirmation rule unchanged. Check that `--target env`
+  (or the `MBT_TARGET_*` you use) points at the container's port before a
+  write. A stale environment variable aims at whatever it last named.
+- **Always `down` at the end, and check with `mvsce-target list` that
+  it is gone**, also after a failure. `reap` cleans up what a crashed
+  session left behind.
+- **A result is the container's, not the stand's.** The image is MVS/CE,
+  and it copies the products in rather than installing them with SMP, so
+  TK5-specific behaviour and SMP installs still need a real stand.
+- **Short tests on mvsdev (`--host mvsdev`), heavy ones locally.** The
+  stands run on mvsdev's four cores too, and a container there takes up
+  to a full core under load: a probe that loads its container measurably
+  slows them (IEB139I on m38b followed httpd's probe load). So load
+  measurements, soak runs and many-job runs go to the Mac: without
+  `--host`, `mvsce-target` starts under Apple's `container`, which idles
+  at about half a core but has ten to share. When mvsdev's cap of three
+  is reached, start locally rather than raising it.
+
+```sh
+eval "$(~/repos/mvs/mvs-docker/mvsce-builder/mvsce-target up --host mvsdev)"
+mbt target ping env --tso --wait 60      # mvsMF up is not TSO up
+mbt test --mvs --target env
+~/repos/mvs/mvs-docker/mvsce-builder/mvsce-target down "$MVSCE_TARGET_NAME" --host mvsdev
+~/repos/mvs/mvs-docker/mvsce-builder/mvsce-target list --host mvsdev
+```
+
 **Never:** assume ASCII; use POSIX APIs; suggest deep recursion without depth
 analysis; use Unix paths in MVS code; reference AI/Claude in any user-facing
 artifact.
