@@ -910,7 +910,7 @@ writes to MVS.
 
 **Except in a throwaway MVS/CE container of your own** (decided
 2026-10-18). A session that started its own container with `mvsce-target
-up` (mvslovers/mvs-docker, `mvsce-builder/mvsce-target`) may write to MVS
+up` (mvslovers/mvs-docker, `mvsce/mvsce-target`) may write to MVS
 *inside that container* without asking: deploy, submit, allocate and
 delete, edit PROCLIB and PARMLIB, APF work, P/S of its STCs, abends on
 purpose. The container is discarded with `mvsce-target down`, and
@@ -938,11 +938,11 @@ nothing survives it. The exception ends at the container's edge:
   is reached, start locally rather than raising it.
 
 ```sh
-eval "$(~/repos/mvs/mvs-docker/mvsce-builder/mvsce-target up --host mvsdev)"
+eval "$(~/repos/mvs/mvs-docker/mvsce/mvsce-target up --host mvsdev)"
 mbt target ping env --tso --wait 60      # mvsMF up is not TSO up
 mbt test --mvs --target env
-~/repos/mvs/mvs-docker/mvsce-builder/mvsce-target down "$MVSCE_TARGET_NAME" --host mvsdev
-~/repos/mvs/mvs-docker/mvsce-builder/mvsce-target list --host mvsdev
+~/repos/mvs/mvs-docker/mvsce/mvsce-target down "$MVSCE_TARGET_NAME" --host mvsdev
+~/repos/mvs/mvs-docker/mvsce/mvsce-target list --host mvsdev
 ```
 
 **Never:** assume ASCII; use POSIX APIs; suggest deep recursion without depth
