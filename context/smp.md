@@ -128,7 +128,7 @@ move our ids to `E…`** — that is precisely the namespace being avoided.
 | rexx370 1.0.0 | `TRXX100` | — | proposed (first level) |
 | brexx370 (BREXX/370) 3.0.0 | `TBRX300` | — | proposed (first level). The prefix `TBRX` is BREXX/370's; the digits follow the release version, which is still open (`PARSE VERSION` shows `3.0.0-dev`, JCC builds showed `V2R5M3`). Not yet checked on any stand |
 | nsf370 0.1.0 | `TNSF010` | — | proposed (first level) |
-| oftpd 0.2.0 | `TOFT020` | `TOFT010` | the first final release; not yet checked on any stand. 0.1.0-dev was released as a prerelease 2026-10-13 under `TOFT010` and installed the same day on m38l, m38x, m38b and m38r (see the burned list) |
+| oftpd 0.2.0 | `TOFT020` | `TOFT010` | the first final release; free on m38l (`JOB01801`), m38x (`JOB00654`), m38b (`JOB02734`) and m38r (`JOB00923`), CDS and ACDS, RC 04 with no DELBY (2026-10-19). 0.1.0-dev was released as a prerelease 2026-10-13 under `TOFT010` and installed the same day on m38l, m38x, m38b and m38r (see the burned list) |
 
 **Burned, do not reuse:** `TUFS110` (ufsd 1.1.x — never released, but applied
 and accepted on a test system), `TUFS120` (ufsd 1.2.0–1.2.2, `REC APP ACC` on
