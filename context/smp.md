@@ -128,14 +128,17 @@ move our ids to `E…`** — that is precisely the namespace being avoided.
 | rexx370 1.0.0 | `TRXX100` | — | proposed (first level) |
 | brexx370 (BREXX/370) 3.0.0 | `TBRX300` | — | proposed (first level). The prefix `TBRX` is BREXX/370's; the digits follow the release version, which is still open (`PARSE VERSION` shows `3.0.0-dev`, JCC builds showed `V2R5M3`). Not yet checked on any stand |
 | nsf370 0.1.0 | `TNSF010` | — | proposed (first level) |
-| oftpd 0.1.0-dev | `TOFT010` | — | first level, to be spent by the 0.1.0-dev prerelease on the test systems (maintainer, 2026-10-13); the first final release is 0.2.0, `TOFT020`, deleting `TOFT010`. Free on m38r (MVSTK5-REF, `JOB00358`), m38b (MVSTK5-BLD, `JOB00579`), m38l (MVSCE-LAB, `JOB01671`) and m38x (MVSCE-EXP, `JOB00592`), CDS and ACDS |
+| oftpd 0.2.0 | `TOFT020` | `TOFT010` | the first final release; not yet checked on any stand. 0.1.0-dev was released as a prerelease 2026-10-13 under `TOFT010` and installed the same day on m38l, m38x, m38b and m38r (see the burned list) |
 
 **Burned, do not reuse:** `TUFS110` (ufsd 1.1.x — never released, but applied
 and accepted on a test system), `TUFS120` (ufsd 1.2.0–1.2.2, `REC APP ACC` on
 mvsdev), `TUFS130` (ufsd 1.3.0, released 2026-09-14), `TUFS140` (ufsd 1.4.0, released 2026-10-13), `TFTP100` (ftpd 1.0.x,
 released), `TFTP110` (ftpd 1.1.0, released 2026-09-14), `TFTP120` (ftpd 1.2.0, released 2026-10-13), `THTP400` (httpd 4.0.x,
 `REC APP ACC` on mvsdev), `THTP410` (httpd 4.1.0, released 2026-09-14), `THTP420` (httpd 4.2.0, released 2026-10-13), `THTP430` (httpd 4.3.0, released 2026-10-15),
-`TZMF110` (mvsMF 1.1.0, released 2026-09-14), `TZMF120` (mvsMF 1.2.0, released 2026-10-13), `TZMF130` (mvsMF 1.3.0, released 2026-10-15), `TXPR100` (inline-delivery experiment, received and rejected
+`TZMF110` (mvsMF 1.1.0, released 2026-09-14), `TZMF120` (mvsMF 1.2.0, released 2026-10-13), `TZMF130` (mvsMF 1.3.0, released 2026-10-15), `TOFT010` (oftpd 0.1.0-dev,
+prerelease 2026-10-13, `REC APP ACC` on m38l `JOB01692`, m38x `JOB00608`,
+m38b `JOB00728`, m38r `JOB00381`; free before on m38r `JOB00358`, m38b
+`JOB00579`, m38l `JOB01671`, m38x `JOB00592`), `TXPR100` (inline-delivery experiment, received and rejected
 on `mvsdev`), `TTST001`–`TTST007` (the `++VER DELETE` measurement and
 the `REQ` semantics probe, both 2026-09-14) and `TTST008`–`TTST010` (the alias
 measurement on mvsdev, 2026-09-27, mvslovers/mbt#112; afterwards removed from

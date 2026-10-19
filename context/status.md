@@ -83,7 +83,7 @@ judgement call.
 | zlib370 | mbt 3 | v1.0.0 released 2026-10-13, adoption under evaluation; on mbt 3 and libc370 2.x since 2026-10-12 (zlib370#2), CI green; zlib only (minizip removed) |
 | rexx370 | mbt v2 | building; no CI workflow yet |
 | brexx370 | mbt 3 | on mbt 3 since 2026-10-11 (brexx370#421; mbt.toml, no submodule, `legacy/` gone), 164 of 164 outputs byte-identical to mbt 2; maintenance mode; REXX suite 183/183 on MVS/CE (batch and TSO steps) |
-| oftpd | mbt 3 | new 2026-10-12 (as oftp370, renamed 2026-10-13); `mvslovers/oftpd`, CI green; not yet released, prerelease 0.1.0 in preparation |
+| oftpd | mbt 3 | new 2026-10-12 (as oftp370, renamed 2026-10-13); `mvslovers/oftpd`, CI green; prerelease 0.1.0-dev released 2026-10-13 (v0.1.0-dev, 1ca9786), SMP-installed on m38l, m38x, m38b, m38r; first final release 0.2.0 (`TOFT020`, deletes `TOFT010`) |
 | mbt | — | active |
 
 ### Legacy / not maintained
