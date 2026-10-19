@@ -165,7 +165,12 @@ mode applies on top of this; this section says where asking adds nothing.
 
 - push to or merge into `main`, merging a PR, tags, releases
 - any write to a real stand: dev1, m38b, m38l, m38r, m38x, mvsdev's own MVS
-  (deploy, submit, allocate, delete, PARMLIB/PROCLIB, APF, P/S of STCs)
+  (deploy, submit, allocate, delete, PARMLIB/PROCLIB, APF, P/S of STCs).
+  **One exception:** an nsf370 session may run its own cycle on dev1 without
+  asking — `P NSFS`/`P NSFV`, `mbt deploy --target dev1`, `S NSFS`/`S NSFV`,
+  and `mbt test --mvs --target dev1`. Everything else on dev1 still asks.
+- writes to `SYS1.*` data sets: an approval covers one task only and does not
+  carry over to the next, even on the same stand
 - deleting data git cannot restore (untracked files, measurement results)
 - writing to the KB (see above)
 - a change that grows well beyond the task (a refactor, a second feature)
