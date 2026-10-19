@@ -908,9 +908,10 @@ a deploy.
 merge`; `gh issue/pr create/merge`; `make deploy` and anything else that
 writes to MVS.
 
-**Except in a throwaway MVS/CE container of your own** (decided
+**Except in a throwaway container of your own** (decided
 2026-10-18). A session that started its own container with `mvsce-target
-up` (mvslovers/mvs-docker, `mvsce/mvsce-target`) may write to MVS
+up` (mvslovers/mvs-docker, `mvsce/mvsce-target`) -- MVS/CE by default,
+TK5 with `--dist tk5` -- may write to MVS
 *inside that container* without asking: deploy, submit, allocate and
 delete, edit PROCLIB and PARMLIB, APF work, P/S of its STCs, abends on
 purpose. The container is discarded with `mvsce-target down`, and
@@ -925,9 +926,15 @@ nothing survives it. The exception ends at the container's edge:
 - **Always `down` at the end, and check with `mvsce-target list` that
   it is gone**, also after a failure. `reap` cleans up what a crashed
   session left behind.
-- **A result is the container's, not the stand's.** The image is MVS/CE,
-  and it copies the products in rather than installing them with SMP, so
-  TK5-specific behaviour and SMP installs still need a real stand.
+- **A result is the container's, not the stand's.** There are two
+  images: `mvsce` is MVS/CE with the products copied in, not installed
+  with SMP; `tk5` is TK5 Update 5 in minimal mode, with UFSD, HTTPD, mvsMF
+  and FTPD installed with SMP from their release packages. The
+  `MBT_TARGET_*` that `up` prints carry each image's own user, volume and
+  classes (HERC01 / WORK01 / MSGCLASS H on TK5). A result on one
+  distribution says nothing about the other, and neither container
+  replaces a stand for an upgrade: both start from the released level and
+  lack a stand's history (older FMIDs, tombstones, APF entries).
 - **Short tests on mvsdev (`--host mvsdev`), heavy ones locally.** The
   stands run on mvsdev's four cores too, and a container there takes up
   to a full core under load: a probe that loads its container measurably
@@ -939,6 +946,7 @@ nothing survives it. The exception ends at the container's edge:
 
 ```sh
 eval "$(~/repos/mvs/mvs-docker/mvsce/mvsce-target up --host mvsdev)"
+eval "$(~/repos/mvs/mvs-docker/mvsce/mvsce-target up --dist tk5 --host mvsdev)"   # or TK5 instead
 mbt target ping env --tso --wait 60      # mvsMF up is not TSO up
 mbt test --mvs --target env
 ~/repos/mvs/mvs-docker/mvsce/mvsce-target down "$MVSCE_TARGET_NAME" --host mvsdev
