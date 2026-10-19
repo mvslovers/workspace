@@ -30,6 +30,8 @@ rexx370  — REXX interpreter, TSO/E V2 compatible        needs: lstring370
 lua370   — Lua 5.4 engine: LUA/LUAC + liblua370.a       needs: — (sysroot libc only)
 lstring370 — Reentrant length-prefixed strings          needs: — (sysroot libc only)
 crypto370 — SHA-256, Blowfish, base64 (static library)  needs: — (sysroot libc only)
+zlib370  — zlib 1.3.1 (static library)                  needs: — (sysroot libc only)
+oftpd    — OFTP file transfer server + utilities        needs: — (sysroot libc only)
 mbt      — MVS Build Tools (Python + Make)
 ```
 
@@ -50,6 +52,16 @@ from `brexx370` below, despite the name.
 libc370 2.0 ports (httpd 4.2.0-dev; mvsMF in mvslovers/mvsmf#379, 2026-10-01).
 The functions keep their C names; the external names lost the `@@`
 (`B64ENC`, not `@@B64ENC`).
+
+**zlib370 is released, its adoption under evaluation** (maintainer,
+2026-10-12). It was legacy until it moved to mbt 3 and libc370 2.x
+(zlib370#2); 1.0.0 was released on 2026-10-13, the first final release cut
+with `mbt release` and `release3.yml`. Whether it stays
+depends on the deflate storage per stream measured on dev1: 268 KB at the
+default (windowBits 15, memLevel 8), 71 KB at 13/6, 30 KB at 12/4. A likely
+consumer is HTTPD's `Content-Encoding: gzip`, which needs deflate only.
+zlib only: the minizip code it carried was removed (maintainer, 2026-10-12);
+MVS MINIZIP/MINIUNZ live in MVS-sysgen/minizip and ship with TK5.
 
 **cc370 and libc370 versions go together.** libc370 2.1.x needs cc370
 `>= 1.1.0, < 2` (every header `#error`s otherwise), and cc370 1.1.x needs libc370
@@ -78,8 +90,10 @@ judgement call.
 | lstring370 | mbt 3 | on mbt 3 since 2026-10-07 (lstring370#13) |
 | lua370 | mbt 3 | on mbt 3 since 2026-10-07 (lua370#23; mbt.toml, no submodule), 41 of 42 outputs byte-identical to mbt 2 v2.2.0; ported to libc370 2.x in lua370#22, now 1.2.0-dev; CI green on main |
 | crypto370 | mbt 3 (pilot) | new 2026-09-30; v1.0.0 released; first project on mbt 3 (mbt.toml, no submodule, crypto370#6, 2026-10-06), CI green; httpd and mvsMF depend on it since their libc370 2.0 ports |
+| zlib370 | mbt 3 | v1.0.0 released 2026-10-13, adoption under evaluation; on mbt 3 and libc370 2.x since 2026-10-12 (zlib370#2), CI green; zlib only (minizip removed) |
 | rexx370 | mbt v2 | building; no CI workflow yet |
 | brexx370 | mbt 3 | on mbt 3 since 2026-10-11 (brexx370#421; mbt.toml, no submodule, `legacy/` gone), 164 of 164 outputs byte-identical to mbt 2; maintenance mode; REXX suite 183/183 on MVS/CE (batch and TSO steps) |
+| oftpd | mbt 3 | new 2026-10-12 (as oftp370, renamed 2026-10-13); `mvslovers/oftpd`, CI green; not yet released, prerelease 0.1.0 in preparation |
 | mbt | — | active |
 
 ### Product names
@@ -98,6 +112,7 @@ for machines, and each is used where it belongs:
 | FTPD | ftpd | |
 | HTTPD | httpd | HTTPLUA and HTTPREXX are its modules (httplua, httprexx) |
 | mvsMF | mvsmf | |
+| OFTPD | oftpd | the started task and its module carry the product name, as FTPD's do |
 | (open) | rexx370 | to be named before its first release; **not** REXX/370, which is an IBM product name (as C/370 was IBM's compiler) |
 | lstring370, crypto370 | the same | libraries with no presence of their own keep the repo name |
 
@@ -233,20 +248,21 @@ move our ids to `E…`** — that is precisely the namespace being avoided.
 
 | Project | FMID | Deletes | State |
 |---------|------|---------|-------|
-| ufsd 1.4.0 | `TUFS140` | `TUFS130` | assigned, not yet checked on any stand; 1.3.0 released 2026-09-14 under `TUFS130`. `TUFS131` (1.3.1, never cut -- the libc370 2.0 port made the next release 1.4.0) is unspent and unassigned |
-| ftpd 1.2.0 | `TFTP120` | `TFTP110` | assigned 2026-10-01 with the libc370 2.0 port (ftpd#157), now on `main`; free on the maintainer's word (only this project assigns `TFTP` ids), no `LIST` run on any stand; 1.1.0 released 2026-09-14 under `TFTP110`. `TFTP111` (1.1.1, never cut -- the libc370 2.0 port made the next release 1.2.0) is unspent and unassigned; it was free on mvsdev (`FMIDCHK JOB00332`) and drnmig3a (`FTPDCHK JOB00045`) |
-| httpd 4.2.0 | `THTP420` | `THTP410` | assigned, not yet checked on any stand; 4.1.0 released 2026-09-14 under `THTP410`. `THTP411` (4.1.1, never cut -- the libc370 2.0 port, httpd#272, made the next release 4.2.0) is unspent and unassigned; it was free on mvsdev (`FMIDCHK JOB00343`) |
-| mvsmf 1.2.0 | `TZMF120` | `TZMF110` | assigned 2026-10-01 with the libc370 2.0 port (mvslovers/mvsmf#379), now on `main`; not yet checked on any stand. 1.1.0 released 2026-09-14 under `TZMF110`, the first level (free on mvsdev, `JOB00360`, CDS and ACDS). `TZMF111` (1.1.1, never cut -- the libc370 2.0 port made the next release 1.2.0) is unspent and unassigned. 1.0.0 and 1.0.1 shipped with no `[distribution]`, so nothing below `TZMF110` was ever assigned |
+| ufsd 1.5.0 | `TUFS150` | `TUFS140` | derived by mbt 3 on main (1.5.0-dev), not yet checked on any stand. 1.4.0 released 2026-10-13 under `TUFS140`, installed 2026-10-13 on m38r (JOB00362/363), m38b (666/667), m38l (1672/1673), m38x (593/594) (++VER DELETE(`TUFS130`) only: a stand still on `TUFS120` needs the UCLIN of ufsd `docs/uninstall.md` step 2 first, see the 1.4.0 release page). `TUFS131` (1.3.1, never cut -- the libc370 2.0 port made the next release 1.4.0) is unspent and unassigned |
+| ftpd 1.3.0 | `TFTP130` | `TFTP120` | derived by mbt 3 on main (1.3.0-dev), not yet checked on any stand. 1.2.0 released 2026-10-13 under `TFTP120`, installed 2026-10-13 on m38r (JOB00366, via 1.1.0), m38b (671, via 1.1.0), m38l (1675), m38x (596) (++VER DELETE(`TFTP110`) only: a stand still on `TFTP100` needs 1.1.0 first); `TFTP120` was free on the maintainer's word, no `LIST` run on any stand. 1.1.0 released 2026-09-14 under `TFTP110`. `TFTP111` (1.1.1, never cut -- the libc370 2.0 port made the next release 1.2.0) is unspent and unassigned; it was free on mvsdev (`FMIDCHK JOB00332`) and drnmig3a (`FTPDCHK JOB00045`) |
+| httpd 4.4.0 | `THTP440` | `THTP430` | derived by mbt 3 on main (4.4.0-dev), not yet checked on any stand. 4.3.0 released 2026-10-15 under `THTP430` (libc370 2.12.1, the httpd#297 / mvsmf#430 leak fix), installed 2026-10-15 on m38r (JOB00891), m38l (1708), m38x (629), m38b (1517), each verified by member list and `LIST` (`THTP430` REC APP ACC, `THTP420` DELBY tombstone); `THTP430` was free on the maintainer's word, no `LIST` run before the release. 4.2.0 released 2026-10-13 under `THTP420`, installed 2026-10-13 on m38r (JOB00372, via 4.1.0), m38b (677, via 4.1.0), m38l (1680), m38x (601) (++VER DELETE(`THTP410`) only: a stand still on `THTP400` needs 4.1.0 first); `THTP420` was free on the maintainer's word, no `LIST` run on any stand. 4.1.0 released 2026-09-14 under `THTP410`. `THTP411` (4.1.1, never cut -- the libc370 2.0 port, httpd#272, made the next release 4.2.0) is unspent and unassigned; it was free on mvsdev (`FMIDCHK JOB00343`) |
+| mvsmf 1.4.0 | `TZMF140` | `TZMF130` | derived by mbt 3 on main (1.4.0-dev), not yet checked on any stand. 1.3.0 released 2026-10-15 under `TZMF130` (libc370 2.12.1, the #430 leak fix), installed 2026-10-15 on m38r (JOB00892), m38l (1709), m38x (630), m38b (1518), each after HTTPD 4.3.0 and with HTTPD stopped around the install, then `LIST`-verified on all four (`TZMF130` REC APP ACC, `TZMF120` DELBY tombstone); `TZMF130` was not `LIST`-checked before release. 1.2.0 released 2026-10-13 under `TZMF120`, installed 2026-10-13 on m38r (JOB00374), m38b (680), m38l (1677), m38x (598) (needs HTTPD 4.2.0 installed first, mvsmf#363); `TZMF120` was not `LIST`-checked on any stand before release. 1.1.0 released 2026-09-14 under `TZMF110`, the first level (free on mvsdev, `JOB00360`, CDS and ACDS). `TZMF111` (1.1.1, never cut -- the libc370 2.0 port made the next release 1.2.0) is unspent and unassigned. 1.0.0 and 1.0.1 shipped with no `[distribution]`, so nothing below `TZMF110` was ever assigned |
 | rexx370 1.0.0 | `TRXX100` | — | proposed (first level) |
 | brexx370 (BREXX/370) 3.0.0 | `TBRX300` | — | proposed (first level). The prefix `TBRX` is BREXX/370's; the digits follow the release version, which is still open (`PARSE VERSION` shows `3.0.0-dev`, JCC builds showed `V2R5M3`). Not yet checked on any stand |
 | nsf370 0.1.0 | `TNSF010` | — | proposed (first level) |
+| oftpd 0.1.0-dev | `TOFT010` | — | first level, to be spent by the 0.1.0-dev prerelease on the test systems (maintainer, 2026-10-13); the first final release is 0.2.0, `TOFT020`, deleting `TOFT010`. Free on m38r (MVSTK5-REF, `JOB00358`), m38b (MVSTK5-BLD, `JOB00579`), m38l (MVSCE-LAB, `JOB01671`) and m38x (MVSCE-EXP, `JOB00592`), CDS and ACDS |
 
 **Burned, do not reuse:** `TUFS110` (ufsd 1.1.x — never released, but applied
 and accepted on a test system), `TUFS120` (ufsd 1.2.0–1.2.2, `REC APP ACC` on
-mvsdev), `TUFS130` (ufsd 1.3.0, released 2026-09-14), `TFTP100` (ftpd 1.0.x,
-released), `TFTP110` (ftpd 1.1.0, released 2026-09-14), `THTP400` (httpd 4.0.x,
-`REC APP ACC` on mvsdev), `THTP410` (httpd 4.1.0, released 2026-09-14),
-`TZMF110` (mvsMF 1.1.0, released 2026-09-14), `TXPR100` (inline-delivery experiment, received and rejected
+mvsdev), `TUFS130` (ufsd 1.3.0, released 2026-09-14), `TUFS140` (ufsd 1.4.0, released 2026-10-13), `TFTP100` (ftpd 1.0.x,
+released), `TFTP110` (ftpd 1.1.0, released 2026-09-14), `TFTP120` (ftpd 1.2.0, released 2026-10-13), `THTP400` (httpd 4.0.x,
+`REC APP ACC` on mvsdev), `THTP410` (httpd 4.1.0, released 2026-09-14), `THTP420` (httpd 4.2.0, released 2026-10-13), `THTP430` (httpd 4.3.0, released 2026-10-15),
+`TZMF110` (mvsMF 1.1.0, released 2026-09-14), `TZMF120` (mvsMF 1.2.0, released 2026-10-13), `TZMF130` (mvsMF 1.3.0, released 2026-10-15), `TXPR100` (inline-delivery experiment, received and rejected
 on `mvsdev`), `TTST001`–`TTST007` (the `++VER DELETE` measurement and
 the `REQ` semantics probe, both 2026-09-14) and `TTST008`–`TTST010` (the alias
 measurement on mvsdev, 2026-09-27, mvslovers/mbt#112; afterwards removed from
@@ -461,7 +477,7 @@ STCs use; MVS 3.8j has no `IEASVCxx`, so nothing else appears at IPL.
 
 No further work. Superseded: **c2asm370** → cc370, **crent370** → libc370.
 Also unmaintained: ufs370, ufs370-tools, ftp370, mqtt370 (+broker,
-+cli), zlib370.
++cli).
 
 ---
 
@@ -776,8 +792,9 @@ and until `6448dd0` none of them set `__stklen` — so every `/.dm` or `/.dsrv`
 hit demanded **262328 contiguous bytes** of subpool 0 against 65584 for an
 ordinary CGI (mvslovers/httpd#196). Measured on mvsdev before that fix: 587
 ordinary requests left the address space healthy, then two display calls, and
-the next module load failed `IEA703I 106-0F` — insufficient *contiguous*
-storage — killing every CGI on that HTTPD until `P HTTPD` / `S HTTPD`. Two
+the next module load failed `IEA703I 106-0F` — read then as insufficient
+*contiguous* storage (but see below: `0F` itself does not say storage) —
+killing every CGI on that HTTPD until `P HTTPD` / `S HTTPD`. Two
 quarter-megabyte holes, fenced off, exactly the anvil mechanism of
 mvslovers/httpd#195.
 
@@ -793,9 +810,17 @@ Read the console another way.
 
 And if you meet `HTTPD908E EXTERNAL PROGRAM … could not be loaded (not found in
 STEPLIB?)`, **the parenthetical is a guess and it is often wrong.** The real
-abend code sits in the `IEA703I` line next to it: `106-0F` is storage, not a
-missing member. Check that before hunting a member that is present
-(mvslovers/httpd#210).
+abend code sits in the `IEA703I` line next to it, and `106` is a fetch
+failure, not a missing member. Check that before hunting a member that is
+present (mvslovers/httpd#210).
+
+**`106-0F` does not mean storage.** IBM's text for return code `0F`: "an
+uncorrectable I/O error occurred, or an error in the load module caused the
+channel program to fail"; storage is `0C`. On m38b on 2026-10-15 HTTPD hit
+`106-0F` fetching MVSMF with 7.27 MB free in one block, and so did PL/I
+compiler phases on other volumes (mvslovers/httpd#300). So read `fn=storage`
+before calling a `106-0F` a shortage. A failed fetch also costs storage: the
+module's size, for good (82 pages for MVSMF, httpd#300).
 
 | Endpoint | Shows |
 |----------|-------|
