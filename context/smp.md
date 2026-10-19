@@ -139,7 +139,9 @@ released), `TFTP110` (ftpd 1.1.0, released 2026-09-14), `TFTP120` (ftpd 1.2.0, r
 on `mvsdev`), `TTST001`–`TTST007` (the `++VER DELETE` measurement and
 the `REQ` semantics probe, both 2026-09-14) and `TTST008`–`TTST010` (the alias
 measurement on mvsdev, 2026-09-27, mvslovers/mbt#112; afterwards removed from
-both zones by UCLIN, `ALTCLN JOB00520` — spent all the same).
+both zones by UCLIN, `ALTCLN JOB00520` — spent all the same), and `TSMP100`
+with its PTF `USMP001` (the smptest prototype, applied on mvsdev 2026-08-08,
+KB `ECO-0007`).
 
 **Never `TMVS…`** — MVS/CE carries applied USERMODs called `TMVS804`,
 `TMVS816` and `TMVS817`; the same holds for `TIST801`, `TJES801`, `TNIP800`

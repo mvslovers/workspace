@@ -87,10 +87,9 @@ a route now *reads* `AUTH=NONE (public)` in `?target=MOD`, where `AUTH=DEFAULT`
 used to require knowing the global policy to interpret. Measured on mvsdev
 2026-08-22: both answered `200` unauthenticated.
 
-Also present, both superseded by mvsMF and only worth touching when working on
-them: `MOD=HTTPDSL /dsl/*` (dataset lister) and `MOD=HTTPJES2 /jes/*` (JES
-spool). `/jes/status` and `/jes/ddlist` return JSON and are handy as a quick
-JES2 cross-check.
+`MOD=HTTPDSL /dsl/*` (dataset lister) and `MOD=HTTPJES2 /jes/*` (JES spool)
+are gone since 4.0.0: superseded by mvsMF, their sources sit in httpd's `tbd/src/`
+and are no longer built. An older HTTPD may still answer on `/jes/status`.
 
 **Two cautions.**
 
