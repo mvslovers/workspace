@@ -20,7 +20,7 @@ httpd      HTTP server                               needs: ufsd, crypto370
 mvsmf      z/OSMF REST API clone (httpd module)      needs: ufsd, httpd, crypto370
 httplua    Lua CGI handler (httpd module)            needs: ufsd, httpd, lua370
 httprexx   REXX Server Pages (httpd module)          needs: ufsd, httpd
-rexx370    REXX interpreter, TSO/E V2 compatible     needs: lstring370
+rexx370    REKS/370: REXX interpreter, TSO/E V2      needs: lstring370
 lua370     Lua 5.4: LUA/LUAC + liblua370.a
 lstring370 reentrant length-prefixed strings (consumers inject alloc/dealloc)
 crypto370  SHA-256, Blowfish, base64 (moved out of libc370 2.0)
@@ -51,8 +51,11 @@ A product has a **name** for people and a **repo name** for machines.
 |---|---|
 | CC/370, LIBC/370, MBT, BREXX/370, LUA/370 | cc370, libc370, mbt, brexx370, lua370 |
 | UFSD, FTPD, HTTPD (modules HTTPLUA, HTTPREXX), mvsMF, OFTPD | ufsd, ftpd, httpd, mvsmf, oftpd |
-| (open — never "REXX/370", that is IBM's) | rexx370 |
+| REKS/370 (never "REXX/370", that is IBM's) | rexx370, to be renamed reks370 |
 | lstring370, crypto370 | the same |
+
+The rexx370 repository is to be renamed reks370. Until the rename has
+happened, commands, paths and dependencies keep `rexx370`.
 
 The product name goes into prose, titles, books, web and release pages, README
 headings. The repo name stays in everything a machine reads: commands, paths,
