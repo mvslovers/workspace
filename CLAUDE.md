@@ -206,6 +206,16 @@ mbt test --mvs --target env
 ## Git and release texts
 
 - Non-trivial work: issue + feature branch + PR referencing the issue.
+- `main` of ufsd, ftpd and oftpd is protected, admins included: changes only
+  by PR with green checks, no force push. Everyone works with the
+  maintainer's account, so the protection is the only thing that tells a
+  session from the maintainer. A force push to `main` is the maintainer's
+  own act and never a session's, even when asked:
+  ```
+  gh api -X DELETE repos/mvslovers/REPO/branches/main/protection/enforce_admins
+  git push --force-with-lease origin HEAD:main
+  gh api -X POST repos/mvslovers/REPO/branches/main/protection/enforce_admins
+  ```
 - Commit messages in clear English, saying what and why.
 - **Never mention AI, Claude or any AI tool** in commits, code, docs, PRs or
   release texts.
