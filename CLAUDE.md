@@ -192,7 +192,7 @@ do anything to MVS inside it without asking.
 - A container result is not a stand result: `mvsce` has the products copied
   in, `tk5` has them SMP-installed from releases; neither has a stand's
   history (old FMIDs, tombstones, APF entries).
-- Short tests on mvsdev (`--host mvsdev`, cap of three); load, soak and
+- Short tests on mvsdev (`--host mvsdev`, cap of six); load, soak and
   many-job runs locally (no `--host`), because they slow the stands.
 
 ```sh
