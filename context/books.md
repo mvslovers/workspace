@@ -48,7 +48,7 @@ add the row before the first commit. The registry is the README of
 | ML05 | UFSD | planned |
 | ML06 | FTPD | planned |
 | ML07 | HTTPD, with its modules | 0001/0002 HTTPD; HTTPREXX and HTTPLUA from 0003 -- planned |
-| ML08 | mvsMF | planned |
+| ML08 | mvsMF | 0001 User's Guide, 0002 Reference -- in preparation |
 
 How the books live, build and ship (agreed 2026-10-07 by the cc370 and
 libc370 sessions): on `main` beside the code, updated in the PR that changes
