@@ -45,10 +45,11 @@ add the row before the first commit. The registry is the README of
 | ML02 | MBT (v3 only) | 0001 User's Guide, 0002 Reference -- on `main` (mbt#213), Draft |
 | ML03 | BREXX/370 | 0001 User's Guide, 0002 Reference, 0003 Library and Samples (RXLIB, samples) -- in preparation |
 | ML04 | rexx370 | planned |
-| ML05 | UFSD | planned |
-| ML06 | FTPD | planned |
+| ML05 | UFSD | 0001 User's Guide, 0002 Reference -- Draft, on `main`, attached to releases from v1.5.0 |
+| ML06 | FTPD | 0001 User's Guide, 0002 Reference -- Draft, on `main`, attached to releases from v1.3.0 |
 | ML07 | HTTPD, with its modules | 0001/0002 HTTPD; HTTPREXX and HTTPLUA from 0003 -- planned |
 | ML08 | mvsMF | 0001 User's Guide, 0002 Reference -- in preparation |
+| ML09 | OFTPD | 0001 User's Guide, 0002 Reference -- Draft, on `main` |
 
 How the books live, build and ship (agreed 2026-10-07 by the cc370 and
 libc370 sessions): on `main` beside the code, updated in the PR that changes
